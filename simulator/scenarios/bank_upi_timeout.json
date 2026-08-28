@@ -1,0 +1,18 @@
+{
+  "incidents": [
+    {
+      "incident_id": "INC_001",
+      "incident_type": "BANK_UPI_TIMEOUT",
+      "start_time": "2026-01-01T00:15:00+00:00",
+      "duration_minutes": 10,
+      "recovery_minutes": 5,
+      "severity": "HIGH",
+      "bank": "HDFC Bank",
+      "payment_method": "UPI",
+      "failure_rate_multiplier": 8,
+      "latency_multiplier": 4,
+      "affected_transaction_percentage": 1.0,
+      "description": "Synthetic UPI bank timeout drill."
+    }
+  ]
+}

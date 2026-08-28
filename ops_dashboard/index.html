@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Pulse SRE Operations Console</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg: #0B0D0F;
+      --panel: #111418;
+      --panel-secondary: #15191E;
+      --border: #292E35;
+      --text-primary: #E6E8EB;
+      --text-secondary: #9299A3;
+      --text-muted: #626A75;
+      --success: #34A853;
+      --warning: #D9A441;
+      --critical: #E5534B;
+      --info: #5B8DEF;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text-primary);
+    }
+  </style>
+</head>
+<body class="min-h-screen font-sans flex flex-row overflow-hidden select-none">
+
+  <!-- Left Sidebar Navigation -->
+  <aside class="w-64 bg-[#111418] border-r border-[#292E35] flex flex-col justify-between shrink-0 h-screen">
+    <!-- Top Brand Area -->
+    <div class="p-4 border-b border-[#292E35] flex items-center space-x-3">
+      <div class="bg-[#292E35] p-1.5 rounded-[2px] text-white">
+        <i class="fa-solid fa-chart-line text-lg"></i>
+      </div>
+      <div>
+        <h1 class="font-extrabold text-sm tracking-tight text-[#E6E8EB]">PaymentPulse</h1>
+        <p class="text-[9px] text-[#626A75] font-semibold uppercase tracking-wider">SRE OPERATIONS</p>
+      </div>
+    </div>
+
+    <!-- Navigation links -->
+    <nav class="flex-grow p-4 space-y-1 overflow-y-auto">
+      <div class="text-[9px] font-bold text-[#626A75] uppercase tracking-wider px-2 mb-2">Workspace</div>
+      <a href="#" class="flex items-center space-x-2.5 px-3 py-2 rounded-[2px] text-xs font-semibold bg-[#15191E] text-[#E6E8EB] border border-[#292E35]">
+        <i class="fa-solid fa-house text-[#E6E8EB]"></i>
+        <span>Overview</span>
+      </a>
+      <a href="#" class="flex items-center space-x-2.5 px-3 py-2 rounded-[2px] text-xs font-semibold text-[#9299A3] hover:bg-[#15191E]/50 hover:text-[#E6E8EB] transition">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span>Incidents</span>
+      </a>
+      <a href="#" class="flex items-center space-x-2.5 px-3 py-2 rounded-[2px] text-xs font-semibold text-[#9299A3] hover:bg-[#15191E]/50 hover:text-[#E6E8EB] transition">
+        <i class="fa-solid fa-circle-nodes"></i>
+        <span>Gateways</span>
+      </a>
+      <a href="#" class="flex items-center space-x-2.5 px-3 py-2 rounded-[2px] text-xs font-semibold text-[#9299A3] hover:bg-[#15191E]/50 hover:text-[#E6E8EB] transition">
+        <i class="fa-solid fa-credit-card"></i>
+        <span>Payments</span>
+      </a>
+      <a href="#" class="flex items-center space-x-2.5 px-3 py-2 rounded-[2px] text-xs font-semibold text-[#9299A3] hover:bg-[#15191E]/50 hover:text-[#E6E8EB] transition">
+        <i class="fa-solid fa-screwdriver-wrench"></i>
+        <span>Recovery</span>
+      </a>
+      <a href="#" class="flex items-center space-x-2.5 px-3 py-2 rounded-[2px] text-xs font-semibold text-[#9299A3] hover:bg-[#15191E]/50 hover:text-[#E6E8EB] transition">
+        <i class="fa-solid fa-list-ul"></i>
+        <span>Events</span>
+      </a>
+    </nav>
+
+    <!-- Bottom ENVIRONMENT / DEMO Section -->
+    <div class="p-4 border-t border-[#292E35] bg-[#15191E] space-y-4">
+      <div class="text-[9px] font-bold text-[#626A75] uppercase tracking-wider">ENVIRONMENT / DEMO</div>
+      <div class="flex flex-col space-y-1.5">
+        <button onclick="startTraffic()" id="btn-start" class="w-full bg-[#34A853] hover:bg-[#34A853]/85 text-white rounded-[2px] py-1.5 font-bold text-[10px] tracking-wider transition flex items-center justify-center space-x-1.5">
+          <i class="fa-solid fa-play"></i>
+          <span>START</span>
+        </button>
+        <button onclick="stopTraffic()" id="btn-stop" class="w-full bg-[#111418] hover:bg-[#15191E] text-[#9299A3] rounded-[2px] py-1.5 font-bold text-[10px] tracking-wider transition border border-[#292E35] flex items-center justify-center space-x-1.5">
+          <i class="fa-solid fa-stop"></i>
+          <span>STOP</span>
+        </button>
+      </div>
+
+      <div class="space-y-1.5 border-t border-[#292E35] pt-3">
+        <label class="block text-[8px] font-bold text-[#626A75] uppercase tracking-wider mb-1">Trigger Simulated Incident</label>
+        <button onclick="injectIncident('GATEWAY_DEGRADATION', 'gateway_gamma')" class="w-full bg-[#E5534B]/10 hover:bg-[#E5534B]/20 text-[#E5534B] border border-[#E5534B]/30 rounded-[2px] py-1 text-[10px] font-bold transition flex items-center justify-center space-x-1">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span>DEGRADE gateway_gamma</span>
+        </button>
+        <button onclick="injectIncident('BANK_FAILURE', 'HDFC Bank')" class="w-full bg-[#D9A441]/10 hover:bg-[#D9A441]/20 text-[#D9A441] border border-[#D9A441]/30 rounded-[2px] py-1 text-[10px] font-bold transition flex items-center justify-center space-x-1">
+          <i class="fa-solid fa-building-columns"></i>
+          <span>TIMEOUT HDFC (UPI)</span>
+        </button>
+        <button onclick="injectIncident('NETWORK_DEGRADATION', 'Pune')" class="w-full bg-[#5B8DEF]/10 hover:bg-[#5B8DEF]/20 text-[#5B8DEF] border border-[#5B8DEF]/30 rounded-[2px] py-1 text-[10px] font-bold transition flex items-center justify-center space-x-1">
+          <i class="fa-solid fa-network-wired"></i>
+          <span>DEGRADE Pune</span>
+        </button>
+      </div>
+
+      <button onclick="resetSystem()" class="w-full bg-[#111418] hover:bg-[#15191E] text-[#9299A3] border border-[#292E35] rounded-[2px] py-1.5 text-[10px] font-bold transition flex items-center justify-center space-x-1.5">
+        <i class="fa-solid fa-arrow-rotate-left"></i>
+        <span>RESET</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content Workspace Area -->
+  <div class="flex-grow h-screen flex flex-col overflow-y-auto">
+    <!-- Top Dense SRE Status Header -->
+    <header class="bg-[#111418] border-b border-[#292E35] py-2.5 px-6 flex justify-between items-center shrink-0">
+      <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-2 bg-[#15191E] border border-[#292E35] px-2.5 py-1 rounded-[2px] text-[10px] font-semibold font-mono">
+          <span class="w-1.5 h-1.5 rounded-[1px] bg-[#34A853] animate-pulse" id="status-dot"></span>
+          <span class="font-bold text-[#E6E8EB] uppercase tracking-wide" id="status-text">SYSTEM STATUS: NOMINAL</span>
+        </div>
+        <div class="text-[#626A75] text-[10px] font-mono" id="system-time">TIME: --Z</div>
+      </div>
+      
+      <div class="flex items-center space-x-6">
+        <div class="text-[10px] font-semibold text-[#9299A3] uppercase">Global TPS: <span class="text-[#E6E8EB] font-mono ml-1" id="header-tps">0.0 TPS</span></div>
+        <div class="text-[10px] font-semibold text-[#9299A3] uppercase">Success Rate: <span class="text-[#E6E8EB] font-mono ml-1" id="header-sr">100.00%</span></div>
+      </div>
+    </header>
+
+    <!-- Main Workspace Content -->
+    <main class="p-6 space-y-6 max-w-7xl w-full mx-auto">
+      
+      <!-- Metrics Bar Strip (Phase UI-1) -->
+      <div class="bg-[#111418] border border-[#292E35] rounded-[2px] p-2 flex flex-row items-center divide-x divide-[#292E35] text-[#E6E8EB] select-none">
+        <!-- SUCCESS RATE -->
+        <div class="flex-1 px-4 py-1">
+          <div class="text-[10px] font-bold text-[#9299A3] uppercase tracking-wider">SUCCESS RATE</div>
+          <div class="text-lg font-bold font-mono text-[#E6E8EB] mt-0.5" id="metric-sr">100.00%</div>
+          <div class="text-[10px] text-[#9299A3] font-mono mt-0.5 flex items-center space-x-1">
+            <span class="w-1.5 h-1.5 bg-[#34A853] rounded-[1px]"></span>
+            <span>LIVE</span>
+          </div>
+        </div>
+        <!-- REVENUE AT RISK -->
+        <div class="flex-1 px-4 py-1">
+          <div class="text-[10px] font-bold text-[#9299A3] uppercase tracking-wider">REVENUE AT RISK</div>
+          <div class="text-lg font-bold font-mono text-[#E5534B] mt-0.5" id="metric-rar">INR 0.00</div>
+          <div class="text-[10px] text-[#9299A3] font-mono mt-0.5 flex items-center space-x-1">
+            <span class="w-1.5 h-1.5 bg-[#34A853] rounded-[1px]" id="rar-status-dot"></span>
+            <span id="rar-status-text">LIVE</span>
+          </div>
+        </div>
+        <!-- RECOVERED REVENUE -->
+        <div class="flex-1 px-4 py-1">
+          <div class="text-[10px] font-bold text-[#9299A3] uppercase tracking-wider">RECOVERED REVENUE</div>
+          <div class="text-lg font-bold font-mono text-[#34A853] mt-0.5" id="metric-recovered">INR 0.00</div>
+          <div class="text-[10px] text-[#9299A3] font-mono mt-0.5 flex items-center space-x-1">
+            <span class="w-1.5 h-1.5 bg-[#34A853] rounded-[1px]"></span>
+            <span>LIVE</span>
+          </div>
+        </div>
+        <!-- TPS -->
+        <div class="flex-1 px-4 py-1">
+          <div class="text-[10px] font-bold text-[#9299A3] uppercase tracking-wider">TPS</div>
+          <div class="text-lg font-bold font-mono text-[#5B8DEF] mt-0.5" id="metric-tps">0.0 TPS</div>
+          <div class="text-[10px] text-[#9299A3] font-mono mt-0.5 flex items-center space-x-1">
+            <span class="w-1.5 h-1.5 bg-[#34A853] rounded-[1px]"></span>
+            <span>LIVE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Incident Panel: Primary Visual Focus (Phase UI-1) -->
+      <div id="incident-banner" class="bg-[#111418] border-l-4 border-l-[#E5534B] border border-[#292E35] rounded-[2px] p-4 text-[#E6E8EB] hidden font-sans">
+        <!-- Header Strip -->
+        <div class="flex justify-between items-center border-b border-[#292E35] pb-2 mb-3">
+          <div class="flex items-center space-x-3">
+            <span class="bg-[#E5534B]/10 text-[#E5534B] border border-[#E5534B]/30 text-[10px] font-bold px-2 py-0.5 rounded-[1px]" id="incident-severity">CRITICAL</span>
+            <span class="font-mono text-xs font-bold text-[#E6E8EB]" id="incident-type">GATEWAY DEGRADATION</span>
+          </div>
+          <span class="font-mono text-xs text-[#9299A3]" id="incident-id">INC-0000</span>
+        </div>
+
+        <!-- Layout Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+          <!-- Column 1: Affected Entity Info -->
+          <div class="space-y-1.5 border-r border-[#292E35]/50 pr-4" id="incident-entity-container">
+            <div class="text-[10px] text-[#9299A3] uppercase tracking-wider font-semibold">AFFECTED ENTITY</div>
+            <div class="font-mono text-sm font-bold text-[#E6E8EB] truncate" id="incident-entity">gateway_gamma</div>
+            <div class="text-[10px] font-mono text-[#9299A3]" id="incident-sub-details">UPI · HDFC Bank</div>
+          </div>
+
+          <!-- Column 2: Live Operational Metrics -->
+          <div class="space-y-1 font-mono border-r border-[#292E35]/50 pr-4">
+            <div class="flex justify-between">
+              <span class="text-[#9299A3]">Success</span>
+              <span class="text-[#E6E8EB]" id="incident-success">--%</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[#9299A3]">Failure</span>
+              <span class="text-[#E5534B]" id="incident-failure">--%</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[#9299A3]">Latency</span>
+              <span class="text-[#E6E8EB]" id="incident-latency">--s</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[#9299A3]">Revenue Risk</span>
+              <span class="text-[#E5534B]" id="incident-rar">INR 0.00</span>
+            </div>
+          </div>
+
+          <!-- Column 3: AI/ML Diagnostics -->
+          <div class="space-y-1 font-mono border-r border-[#292E35]/50 pr-4">
+            <div class="flex justify-between">
+              <span class="text-[#9299A3]">ML Score</span>
+              <span class="text-[#E6E8EB]" id="incident-ml-score">0.00</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[#9299A3]">Confidence</span>
+              <span class="text-[#E6E8EB]" id="incident-confidence">0%</span>
+            </div>
+            <div class="flex justify-between mt-2 pt-1 border-t border-[#292E35]/30">
+              <span class="text-[#9299A3]">Started</span>
+              <span class="text-[#E6E8EB]" id="incident-started">00:00:00</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[#9299A3]">Duration</span>
+              <span class="text-[#D9A441]" id="incident-duration">00:00</span>
+            </div>
+          </div>
+
+          <!-- Column 4: SRE Incident Command / Recovery State -->
+          <div class="space-y-2 pl-2">
+            <div class="text-[10px] text-[#9299A3] uppercase tracking-wider font-semibold">RECOVERY PIPELINE</div>
+            <div class="flex flex-col space-y-1.5 font-mono text-[10px]">
+              <div class="flex items-center space-x-1.5">
+                <span class="w-1.5 h-1.5 rounded-[1px] bg-[#626A75]" id="step-investigating-dot"></span>
+                <span class="text-[#626A75]" id="step-investigating-txt">INVESTIGATING</span>
+              </div>
+              <div class="flex items-center space-x-1.5">
+                <span class="w-1.5 h-1.5 rounded-[1px] bg-[#626A75]" id="step-counterfactual-dot"></span>
+                <span class="text-[#626A75]" id="step-counterfactual-txt">COUNTERFACTUAL</span>
+              </div>
+              <div class="flex items-center space-x-1.5">
+                <span class="w-1.5 h-1.5 rounded-[1px] bg-[#626A75]" id="step-recovery-dot"></span>
+                <span class="text-[#626A75]" id="step-recovery-txt">RECOVERY</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Healthy State Panel Placeholder -->
+      <div id="healthy-placeholder" class="bg-[#111418] border border-[#292E35] rounded-[2px] p-4 text-[#9299A3] font-mono text-xs flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <span class="w-1.5 h-1.5 bg-[#34A853] rounded-[1px] animate-pulse"></span>
+          <span>STATUS: NOMINAL · MONITORING ACTIVE</span>
+        </div>
+        <span class="text-[#626A75] text-[10px]">ACTIVE INCIDENTS: 0</span>
+      </div>
+
+      <!-- Gateway State / Traffic Section -->
+      <div class="bg-[#111418] border border-[#292E35] rounded-[2px] p-4 text-[#E6E8EB]">
+        <h4 class="font-bold text-xs text-[#9299A3] uppercase tracking-wider mb-3 pb-1 border-b border-[#292E35]">
+          <i class="fa-solid fa-circle-nodes mr-2 text-[#5B8DEF]"></i>Gateway Status & Traffic Routing
+        </h4>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="border-b border-[#292E35] text-[#626A75] font-bold">
+                <th class="pb-2">Gateway Name</th>
+                <th class="pb-2">Health Status</th>
+                <th class="pb-2">Success Rate (Last 50)</th>
+                <th class="pb-2">Latency (Avg)</th>
+                <th class="pb-2">Traffic Percentage</th>
+                <th class="pb-2">Degraded State</th>
+              </tr>
+            </thead>
+            <tbody id="gateway-table-body" class="divide-y divide-[#292E35]/40 font-mono">
+              <tr id="row-gateway_alpha">
+                <td class="py-2.5 font-bold text-[#E6E8EB]">gateway_alpha</td>
+                <td class="py-2.5">
+                  <span class="px-1.5 py-0.5 rounded-[1px] bg-[#34A853]/10 text-[#34A853] border border-[#34A853]/30" id="gw-gateway_alpha-status">HEALTHY</span>
+                </td>
+                <td class="py-2.5 text-[#E6E8EB]" id="gw-gateway_alpha-sr">100.0%</td>
+                <td class="py-2.5 text-[#E6E8EB]" id="gw-gateway_alpha-latency">245ms</td>
+                <td class="py-2.5 text-[#E6E8EB] font-bold" id="gw-alpha-pct">33.3%</td>
+                <td class="py-2.5 text-[#626A75]" id="gw-gateway_alpha-degraded">NO</td>
+              </tr>
+              <tr id="row-gateway_beta">
+                <td class="py-2.5 font-bold text-[#E6E8EB]">gateway_beta</td>
+                <td class="py-2.5">
+                  <span class="px-1.5 py-0.5 rounded-[1px] bg-[#34A853]/10 text-[#34A853] border border-[#34A853]/30" id="gw-gateway_beta-status">HEALTHY</span>
+                </td>
+                <td class="py-2.5 text-[#E6E8EB]" id="gw-gateway_beta-sr">100.0%</td>
+                <td class="py-2.5 text-[#E6E8EB]" id="gw-gateway_beta-latency">250ms</td>
+                <td class="py-2.5 text-[#E6E8EB] font-bold" id="gw-beta-pct">33.3%</td>
+                <td class="py-2.5 text-[#626A75]" id="gw-gateway_beta-degraded">NO</td>
+              </tr>
+              <tr id="row-gateway_gamma">
+                <td class="py-2.5 font-bold text-[#E6E8EB]">gateway_gamma</td>
+                <td class="py-2.5">
+                  <span class="px-1.5 py-0.5 rounded-[1px] bg-[#34A853]/10 text-[#34A853] border border-[#34A853]/30" id="gw-gateway_gamma-status">HEALTHY</span>
+                </td>
+                <td class="py-2.5 text-[#E6E8EB]" id="gw-gateway_gamma-sr">100.0%</td>
+                <td class="py-2.5 text-[#E6E8EB]" id="gw-gateway_gamma-latency">265ms</td>
+                <td class="py-2.5 text-[#E6E8EB] font-bold" id="gw-gamma-pct">33.3%</td>
+                <td class="py-2.5 text-[#626A75]" id="gw-gateway_gamma-degraded">NO</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Counterfactual Comparison Decision Panel -->
+      <div class="bg-[#111418] border border-[#292E35] rounded-[2px] p-4 text-[#E6E8EB]">
+        <h4 class="font-bold text-xs text-[#9299A3] uppercase tracking-wider mb-3 pb-1 border-b border-[#292E35]">
+          <i class="fa-solid fa-scale-balanced mr-2 text-[#D9A441]"></i>Counterfactual Validation & Projections
+        </h4>
+        
+        <div id="cf-placeholder" class="text-xs text-[#626A75] py-6 text-center font-mono">
+          CF_STANDBY · NO RECOVERY ACTION ACTIVE
+        </div>
+
+        <div id="cf-details" class="hidden space-y-4">
+          <!-- Main Comparison Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+            <!-- Branch A: WITH ACTION -->
+            <div class="border border-[#292E35] rounded-[1px] p-3 bg-[#15191E]/50">
+              <div class="text-[10px] text-[#9299A3] font-bold uppercase mb-2 border-b border-[#292E35] pb-1 flex justify-between">
+                <span>Branch A: WITH ACTION</span>
+                <span class="text-[#5B8DEF]" id="cf-action-label">ROUTE_TRAFFIC</span>
+              </div>
+              <div class="space-y-1.5">
+                <div class="flex justify-between">
+                  <span class="text-[#626A75]">Projected Success Rate</span>
+                  <span class="text-[#E6E8EB] font-bold" id="cf-with-sr">--%</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-[#626A75]">Projected Failure Rate</span>
+                  <span class="text-[#E5534B] font-bold" id="cf-with-fr">--%</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-[#626A75]">Projected Latency</span>
+                  <span class="text-[#E6E8EB] font-bold" id="cf-with-latency">--ms</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-[#626A75]">Projected Revenue at Risk</span>
+                  <span class="text-[#E5534B] font-bold" id="cf-with-rar">INR 0.00</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Branch B: WITHOUT ACTION / CONTROL -->
+            <div class="border border-[#292E35] rounded-[1px] p-3 bg-[#15191E]/50">
+              <div class="text-[10px] text-[#9299A3] font-bold uppercase mb-2 border-b border-[#292E35] pb-1">
+                Branch B: WITHOUT ACTION (Control)
+              </div>
+              <div class="space-y-1.5">
+                <div class="flex justify-between">
+                  <span class="text-[#626A75]">Baseline Success Rate</span>
+                  <span class="text-[#E6E8EB] font-bold" id="cf-without-sr">--%</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-[#626A75]">Baseline Failure Rate</span>
+                  <span class="text-[#E5534B] font-bold" id="cf-without-fr">--%</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-[#626A75]">Baseline Latency</span>
+                  <span class="text-[#E6E8EB] font-bold" id="cf-without-latency">--ms</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-[#626A75]">Baseline Revenue at Risk</span>
+                  <span class="text-[#E5534B] font-bold" id="cf-without-rar">INR 0.00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Causal Treatment Effect Summary -->
+          <div class="bg-[#15191E] border border-[#292E35] rounded-[1px] p-3 text-xs font-mono grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div>
+              <span class="text-[10px] text-[#626A75] block uppercase font-bold">Treatment Effect (Revenue Recovered)</span>
+              <span class="text-sm font-bold text-[#34A853] mt-1 block" id="cf-effect-recovered">INR 0.00</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-[#626A75] block uppercase font-bold">95% Student-t CI</span>
+              <span class="text-xs font-bold text-[#E6E8EB] mt-1.5 block" id="cf-confidence-interval">INR 0.00 - INR 0.00</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-[#626A75] block uppercase font-bold">Paired Simulations</span>
+              <span class="text-xs font-bold text-[#E6E8EB] mt-1.5 block" id="cf-paired-runs">20 seeded runs (df=19)</span>
+            </div>
+          </div>
+
+          <!-- Post-Execution Real Telemetry -->
+          <div id="cf-telemetry" class="hidden border border-[#292E35] rounded-[1px] p-3 bg-[#0B0D0F]">
+            <div class="text-[10px] text-[#D9A441] font-bold uppercase mb-2 border-b border-[#292E35] pb-1">
+              POST-EXECUTION PREDICTION TELEMETRY
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
+              <div class="space-y-1">
+                <div class="text-[#626A75] uppercase text-[10px]">Predicted WITH ACTION</div>
+                <div class="text-[#E6E8EB]">Success Rate: <span class="font-bold" id="tel-pred-sr">--%</span></div>
+                <div class="text-[#E6E8EB]">Revenue at Risk: <span class="font-bold" id="tel-pred-rar">INR --</span></div>
+              </div>
+              <div class="space-y-1">
+                <div class="text-[#626A75] uppercase text-[10px]">Actual WITH ACTION</div>
+                <div class="text-[#E6E8EB]">Success Rate: <span class="font-bold" id="tel-act-sr">--%</span></div>
+                <div class="text-[#E6E8EB]">Revenue at Risk: <span class="font-bold" id="tel-act-rar">INR --</span></div>
+              </div>
+              <div class="space-y-1">
+                <div class="text-[#E5534B] uppercase text-[10px]">Prediction Error</div>
+                <div class="text-[#E5534B]">SR Error: <span class="font-bold" id="tel-err-sr">--%</span></div>
+                <div class="text-[#E5534B]">RAR Error: <span class="font-bold" id="tel-err-rar">INR --</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Historical Operations Timeline (Moved below active state) -->
+      <div class="bg-[#111418] border border-[#292E35] rounded-[2px] p-5 min-h-[260px]">
+        <h4 class="font-bold text-xs text-[#9299A3] uppercase tracking-wider mb-4 border-b border-[#292E35] pb-1">METRICS TIMELINE</h4>
+        <div class="w-full relative h-[180px]">
+          <canvas id="metricsChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Agent Trace Panel & Live Transaction Feed -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Agent Decision Trace Panel (Renamed Reasoning Log) -->
+        <div class="bg-[#111418] border border-[#292E35] rounded-[2px] p-5 flex flex-col space-y-4">
+          <h4 class="font-bold text-xs text-[#9299A3] uppercase tracking-wider border-b border-[#292E35] pb-2">
+            <i class="fa-solid fa-terminal mr-2 text-[#5B8DEF]"></i>Agent Decision Trace
+          </h4>
+          
+          <div class="space-y-3 flex-grow flex flex-col justify-between">
+            <div>
+              <span class="text-[9px] font-bold text-[#626A75] uppercase">Agent Status</span>
+              <div class="flex items-center space-x-2 mt-0.5">
+                <span class="w-1.5 h-1.5 bg-[#626A75] rounded-[1px]" id="agent-dot"></span>
+                <span class="font-bold text-xs text-[#9299A3]" id="agent-status">MONITORING</span>
+              </div>
+            </div>
+
+            <div class="bg-[#0B0D0F] border border-[#292E35] rounded-[1px] p-3 text-xs flex-grow my-2 overflow-y-auto max-h-[220px] font-mono space-y-2">
+              <span class="text-[9px] font-bold text-[#626A75] uppercase block border-b border-[#292E35]/40 pb-1">Trace Summary</span>
+              <div id="agent-decision-trace" class="space-y-2 text-[#E6E8EB] text-[11px]">
+                <div class="text-[#626A75]">STATUS: NOMINAL · MONITORING ACTIVE</div>
+              </div>
+            </div>
+
+            <div class="bg-[#15191E] border border-[#292E35] rounded-[1px] p-3 text-xs space-y-1 font-mono" id="recovery-action-panel">
+              <div class="flex justify-between text-[11px]">
+                <span class="text-[#626A75]">Selected Action:</span>
+                <span id="agent-action-type" class="font-bold text-[#E6E8EB]">NONE</span>
+              </div>
+              <div class="flex justify-between text-[11px]">
+                <span class="text-[#626A75]">Parameters:</span>
+                <span id="agent-action-params" class="font-bold text-[#9299A3] truncate max-w-[150px]">--</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Transaction Feed -->
+        <div class="bg-[#111418] border border-[#292E35] rounded-[2px] p-5 md:col-span-2">
+          <h4 class="font-bold text-xs text-[#9299A3] uppercase tracking-wider mb-4 border-b border-[#292E35] pb-2">
+            <i class="fa-solid fa-list mr-2 text-[#5B8DEF]"></i>Live Event Stream
+          </h4>
+          
+          <div class="overflow-x-auto max-h-[280px]">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="border-b border-[#292E35] text-[#626A75] font-bold">
+                  <th class="pb-2">Timestamp</th>
+                  <th class="pb-2">Tx ID</th>
+                  <th class="pb-2">Gateway</th>
+                  <th class="pb-2">Method</th>
+                  <th class="pb-2">Amount</th>
+                  <th class="pb-2">Status</th>
+                </tr>
+              </thead>
+              <tbody id="transaction-feed" class="divide-y divide-[#292E35]/40 font-mono">
+                <tr class="text-[#626A75] text-center py-4">
+                  <td colspan="6" class="py-4">NO DATA · STREAM INACTIVE</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-[#111418] border-t border-[#292E35] text-[#626A75] py-3 text-center text-xs mt-auto">
+      <p>&copy; 2026 Payment Pulse SRE Operations Console. Decoupled Sandbox Active.</p>
+    </footer>
+  </div>
+
+  <script>
+    let ws = null;
+    let chart = null;
+    const maxDataPoints = 30;
+    const timelineLabels = [];
+    const successRateData = [];
+    const revenueRiskData = [];
+
+    // Local state tracking for live client-side gateway performance metrics
+    const gatewayStats = {
+      gateway_alpha: { successes: 0, total: 0, latencies: [] },
+      gateway_beta: { successes: 0, total: 0, latencies: [] },
+      gateway_gamma: { successes: 0, total: 0, latencies: [] }
+    };
+
+    function resetGatewayStats() {
+      for (const g in gatewayStats) {
+        gatewayStats[g].successes = 0;
+        gatewayStats[g].total = 0;
+        gatewayStats[g].latencies = [];
+        
+        document.getElementById(`gw-${g}-sr`).innerText = '100.0%';
+        document.getElementById(`gw-${g}-latency`).innerText = '250ms';
+        document.getElementById(`gw-${g}-status`).innerText = "HEALTHY";
+        document.getElementById(`gw-${g}-status`).className = "px-1.5 py-0.5 rounded-[1px] bg-[#34A853]/10 text-[#34A853] border border-[#34A853]/30";
+        document.getElementById(`gw-${g}-degraded`).innerText = 'NO';
+        document.getElementById(`gw-${g}-degraded`).className = 'text-[#626A75]';
+      }
+    }
+
+    function recordGatewayTx(gw, isSuccess, latency) {
+      if (gatewayStats[gw]) {
+        const stats = gatewayStats[gw];
+        stats.total++;
+        if (isSuccess) stats.successes++;
+        
+        if (latency !== undefined) {
+          stats.latencies.push(latency);
+          if (stats.latencies.length > 50) {
+            stats.latencies.shift();
+          }
+        }
+
+        // Calculate and update UI
+        const sr = (stats.successes / stats.total) * 100;
+        const avgLat = stats.latencies.length 
+          ? Math.round(stats.latencies.reduce((a,b) => a+b, 0) / stats.latencies.length) 
+          : 250;
+
+        document.getElementById(`gw-${gw}-sr`).innerText = `${sr.toFixed(1)}%`;
+        document.getElementById(`gw-${gw}-latency`).innerText = `${avgLat}ms`;
+      }
+    }
+
+    // Initialize Chart.js
+    function initChart() {
+      const ctx = document.getElementById('metricsChart').getContext('2d');
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: timelineLabels,
+          datasets: [
+            {
+              label: 'Success Rate (%)',
+              data: successRateData,
+              borderColor: '#5B8DEF',
+              backgroundColor: 'transparent',
+              borderWidth: 1.5,
+              yAxisID: 'y-sr',
+              tension: 0.25,
+              fill: false,
+              pointRadius: 1
+            },
+            {
+              label: 'Revenue-At-Risk (INR)',
+              data: revenueRiskData,
+              borderColor: '#E5534B',
+              backgroundColor: 'transparent',
+              borderWidth: 1.5,
+              yAxisID: 'y-rar',
+              tension: 0.25,
+              fill: false,
+              pointRadius: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            'y-sr': {
+              type: 'linear',
+              position: 'left',
+              min: 0,
+              max: 100,
+              grid: { color: '#292E35' },
+              ticks: { color: '#9299A3', font: { size: 9, family: 'monospace' } }
+            },
+            'y-rar': {
+              type: 'linear',
+              position: 'right',
+              grid: { drawOnChartArea: false },
+              ticks: { color: '#9299A3', font: { size: 9, family: 'monospace' } }
+            },
+            x: {
+              grid: { color: '#292E35' },
+              ticks: { color: '#9299A3', font: { size: 9, family: 'monospace' }, maxTicksLimit: 10 }
+            }
+          },
+          plugins: {
+            legend: {
+              labels: { color: '#E6E8EB', boxWidth: 10, font: { size: 10 } }
+            }
+          }
+        }
+      });
+    }
+
+    // Connect to Websockets
+    function connectWS() {
+      const loc = window.location;
+      const wsUrl = (loc.protocol === 'https:' ? 'wss://' : 'ws://') + loc.host + '/ws/events';
+      
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        console.log('WS Connection online');
+        fetchTrafficStatus();
+      };
+
+      ws.onmessage = (event) => {
+        const payload = JSON.parse(event.data);
+        handleIncomingEvent(payload);
+      };
+
+      ws.onclose = () => {
+        console.log('WS CONNECTION LOST · RECONNECTING');
+        setTimeout(connectWS, 3000);
+      };
+    }
+
+    // Global active incident started timestamp
+    window.activeIncidentStartedAt = null;
+
+    // Timer to update duration in SRE panel
+    setInterval(() => {
+      const durationEl = document.getElementById('incident-duration');
+      if (window.activeIncidentStartedAt && durationEl) {
+        const diffMs = new Date() - window.activeIncidentStartedAt;
+        const diffSecs = Math.floor(diffMs / 1000);
+        const mins = Math.floor(diffSecs / 60);
+        const secs = diffSecs % 60;
+        const minsStr = mins.toString().padStart(2, '0');
+        const secsStr = secs.toString().padStart(2, '0');
+        durationEl.innerText = `${minsStr}:${secsStr}`;
+      }
+    }, 1000);
+
+    function setPipelineStep(step) {
+      const steps = {
+        'INVESTIGATING': { dot: 'step-investigating-dot', txt: 'step-investigating-txt' },
+        'COUNTERFACTUAL': { dot: 'step-counterfactual-dot', txt: 'step-counterfactual-txt' },
+        'RECOVERY': { dot: 'step-recovery-dot', txt: 'step-recovery-txt' }
+      };
+      
+      // Default all to disabled
+      for (const k in steps) {
+        document.getElementById(steps[k].dot).className = "w-1.5 h-1.5 rounded-[1px] bg-[#626A75]";
+        document.getElementById(steps[k].txt).className = "text-[#626A75]";
+      }
+      
+      if (step === 'INVESTIGATING') {
+        document.getElementById(steps['INVESTIGATING'].dot).className = "w-1.5 h-1.5 rounded-[1px] bg-[#E5534B] animate-pulse";
+        document.getElementById(steps['INVESTIGATING'].txt).className = "text-[#E6E8EB] font-bold";
+      } else if (step === 'COUNTERFACTUAL') {
+        document.getElementById(steps['INVESTIGATING'].dot).className = "w-1.5 h-1.5 rounded-[1px] bg-[#34A853]";
+        document.getElementById(steps['INVESTIGATING'].txt).className = "text-[#9299A3]";
+        document.getElementById(steps['COUNTERFACTUAL'].dot).className = "w-1.5 h-1.5 rounded-[1px] bg-[#D9A441] animate-pulse";
+        document.getElementById(steps['COUNTERFACTUAL'].txt).className = "text-[#E6E8EB] font-bold";
+      } else if (step === 'RECOVERY') {
+        document.getElementById(steps['INVESTIGATING'].dot).className = "w-1.5 h-1.5 rounded-[1px] bg-[#34A853]";
+        document.getElementById(steps['INVESTIGATING'].txt).className = "text-[#9299A3]";
+        document.getElementById(steps['COUNTERFACTUAL'].dot).className = "w-1.5 h-1.5 rounded-[1px] bg-[#34A853]";
+        document.getElementById(steps['COUNTERFACTUAL'].txt).className = "text-[#9299A3]";
+        document.getElementById(steps['RECOVERY'].dot).className = "w-1.5 h-1.5 rounded-[1px] bg-[#34A853] animate-pulse";
+        document.getElementById(steps['RECOVERY'].txt).className = "text-[#E6E8EB] font-bold";
+      }
+    }
+
+    // Component Contract Incident Renderer (Refinement 12)
+    function renderIncident(incidentData) {
+      const { incidentType, incidentId, affectedEntity, severity, anomalyScore, confidence, startedAt, subDetailsStr } = incidentData;
+      
+      // 1. Strict Contract Validation for affectedEntity
+      let entityTextHtml = '';
+      if (!affectedEntity) {
+        console.error("DATA CONTRACT ERROR: affectedEntity parameter is missing in incident payload.", incidentData);
+        entityTextHtml = `
+          <div class="text-[10px] text-[#E5534B] uppercase tracking-wider font-semibold">TARGET</div>
+          <div class="font-mono text-xs font-bold text-[#E5534B]">DATA CONTRACT ERROR</div>
+          <div class="text-[10px] font-mono text-[#E5534B]">Affected entity unavailable</div>
+        `;
+      } else {
+        entityTextHtml = `
+          <div class="text-[10px] text-[#9299A3] uppercase tracking-wider font-semibold">AFFECTED ENTITY</div>
+          <div class="font-mono text-sm font-bold text-[#E6E8EB] truncate" id="incident-entity">${affectedEntity}</div>
+          <div class="text-[10px] font-mono text-[#9299A3]" id="incident-sub-details">${subDetailsStr || '--'}</div>
+        `;
+      }
+
+      // Update DOM components after validation checks
+      document.getElementById('incident-type').innerText = incidentType.replace(/_/g, ' ');
+      document.getElementById('incident-id').innerText = incidentId;
+      document.getElementById('incident-entity-container').innerHTML = entityTextHtml;
+      
+      const sevBadge = document.getElementById('incident-severity');
+      sevBadge.innerText = severity;
+      if (severity === 'CRITICAL') {
+        sevBadge.className = "bg-[#E5534B]/10 text-[#E5534B] border border-[#E5534B]/30 text-[10px] font-bold px-2 py-0.5 rounded-[1px]";
+      } else if (severity === 'HIGH' || severity === 'MEDIUM') {
+        sevBadge.className = "bg-[#D9A441]/10 text-[#D9A441] border border-[#D9A441]/30 text-[10px] font-bold px-2 py-0.5 rounded-[1px]";
+      } else {
+        sevBadge.className = "bg-[#5B8DEF]/10 text-[#5B8DEF] border border-[#5B8DEF]/30 text-[10px] font-bold px-2 py-0.5 rounded-[1px]";
+      }
+
+      document.getElementById('incident-ml-score').innerText = anomalyScore;
+      document.getElementById('incident-confidence').innerText = confidence;
+
+      if (startedAt) {
+        const date = new Date(startedAt);
+        document.getElementById('incident-started').innerText = date.toTimeString().split(' ')[0];
+        window.activeIncidentStartedAt = date;
+      }
+
+      // 2. Terse Clinical Status indicators (Item 10)
+      document.getElementById('status-dot').className = "w-1.5 h-1.5 rounded-[1px] bg-[#E5534B] animate-pulse";
+      document.getElementById('status-text').innerText = `INCIDENT · ${affectedEntity || 'UNKNOWN'} · ${severity}`;
+      document.getElementById('status-text').className = "font-bold text-[#E5534B] uppercase tracking-wide";
+
+      // Toggle display views
+      document.getElementById('incident-banner').classList.remove('hidden');
+      document.getElementById('healthy-placeholder').classList.add('hidden');
+      setPipelineStep('INVESTIGATING');
+    }
+
+    function handleIncomingEvent(event) {
+      const type = event.event_type;
+
+      // 1. Handle Transaction outcome events for the live stream table
+      if (type === 'PAYMENT_SUCCESS' || type === 'PAYMENT_FAILED') {
+        renderTransactionRow(event);
+        if (event.gateway) {
+          recordGatewayTx(event.gateway, type === 'PAYMENT_SUCCESS', event.metadata ? event.metadata.latency_ms : undefined);
+        }
+      }
+
+      // 2. Handle Live metric updates
+      if (type === 'REVENUE_RISK_UPDATED') {
+        const sr = event.metadata.success_rate * 100;
+        const fr = event.metadata.failure_rate * 100;
+        const latency = event.metadata.latency_ms / 1000;
+        const rar = event.amount;
+        
+        document.getElementById('metric-sr').innerText = `${sr.toFixed(2)}%`;
+        document.getElementById('metric-rar').innerText = `INR ${rar.toLocaleString('en-IN')}`;
+        document.getElementById('metric-tps').innerText = `2.0 TPS`;
+
+        document.getElementById('header-sr').innerText = `${sr.toFixed(2)}%`;
+        document.getElementById('system-time').innerText = `TIME: ${event.timestamp.split('.')[0]}Z`;
+
+        // Update active incident panel metrics if currently displayed
+        const instSuccess = document.getElementById('incident-success');
+        if (instSuccess) instSuccess.innerText = `${sr.toFixed(1)}%`;
+        const instFailure = document.getElementById('incident-failure');
+        if (instFailure) instFailure.innerText = `${fr.toFixed(1)}%`;
+        const instLatency = document.getElementById('incident-latency');
+        if (instLatency) instLatency.innerText = `${latency.toFixed(2)}s`;
+        const instRar = document.getElementById('incident-rar');
+        if (instRar) instRar.innerText = `INR ${rar.toLocaleString('en-IN')}`;
+
+        // Change status line on REVENUE AT RISK card
+        const rarStatusText = document.getElementById('rar-status-text');
+        const rarStatusDot = document.getElementById('rar-status-dot');
+        if (rar > 0) {
+            rarStatusText.innerText = 'WARNING';
+            rarStatusDot.className = 'w-1.5 h-1.5 bg-[#D9A441] rounded-[1px]';
+        } else {
+            rarStatusText.innerText = 'LIVE';
+            rarStatusDot.className = 'w-1.5 h-1.5 bg-[#34A853] rounded-[1px]';
+        }
+
+        // Update timelines
+        const timeStr = event.timestamp.split('T')[1].substring(0, 8);
+        updateChartData(timeStr, sr, rar);
+      }
+
+      // 3. Handle Active Incident detections
+      if (type === 'INCIDENT_DETECTED') {
+        const meta = event.metadata;
+        const incidentId = meta.incident_id || 'N/A';
+        const incidentType = meta.incident_type || 'UNKNOWN';
+        const severity = meta.severity || 'UNKNOWN';
+        const anomalyScore = meta.anomaly_score ? meta.anomaly_score.toFixed(2) : '0.00';
+        const confidence = meta.confidence ? `${Math.round(meta.confidence * 100)}%` : '--%';
+        const startedAt = meta.started_at;
+
+        // Build list of all applicable sub details
+        let subDetails = [];
+        if (event.payment_method) subDetails.push(event.payment_method);
+        if (event.bank) subDetails.push(event.bank);
+        if (event.merchant) subDetails.push(event.merchant);
+        if (event.location) subDetails.push(event.location);
+        const subDetailsStr = subDetails.join(' · ') || '--';
+
+        // Render incident via the component contract method (Item 12)
+        renderIncident({
+          incidentType,
+          incidentId,
+          affectedEntity: meta.affected_entity,
+          severity,
+          anomalyScore,
+          confidence,
+          startedAt,
+          subDetailsStr
+        });
+
+        // Update gateway status card badge if gateway type incident
+        if (event.gateway) {
+          const badge = document.getElementById(`gw-${event.gateway}-status`);
+          if (badge) {
+            badge.innerText = "DEGRADED";
+            badge.className = "px-1.5 py-0.5 rounded-[1px] bg-[#E5534B]/10 text-[#E5534B] border border-[#E5534B]/30";
+          }
+          const degCol = document.getElementById(`gw-${event.gateway}-degraded`);
+          if (degCol) {
+            degCol.innerText = "YES";
+            degCol.className = 'text-[#E5534B] font-bold';
+          }
+        }
+
+        // Structured Agent Decision Trace Logging (Refinement 2)
+        const traceHtml = `
+          <div class="text-[#E5534B] font-bold">● INCIDENT DETECTED</div>
+          <div class="pl-2.5 border-l border-[#E5534B]/30 space-y-1">
+            <div><span class="text-[#626A75]">Observation:</span> Success Rate degraded. Anomaly Score: ${anomalyScore}</div>
+            <div><span class="text-[#626A75]">Diagnosis:</span> ${incidentType} on ${meta.affected_entity || 'UNKNOWN'}</div>
+            <div><span class="text-[#626A75]">Policy Status:</span> Evaluating recovery options...</div>
+          </div>
+        `;
+        document.getElementById('agent-decision-trace').innerHTML = traceHtml;
+      }
+
+      // 4. Handle recovery steps
+      if (type === 'RECOVERY_ACTION_PROPOSED') {
+        setAgentState('EVALUATING', 'Evaluating simulation dry-run matrix...');
+        setPipelineStep('COUNTERFACTUAL');
+
+        const traceHtml = `
+          <div class="text-[#E5534B] font-bold">● INCIDENT DETECTED</div>
+          <div class="pl-2.5 border-l border-[#E5534B]/30 space-y-1">
+            <div><span class="text-[#626A75]">Observation:</span> Incident active. Anomaly Score: ${document.getElementById('incident-ml-score').innerText}</div>
+            <div><span class="text-[#626A75]">Diagnosis:</span> ${document.getElementById('incident-type').innerText} on ${document.getElementById('incident-entity') ? document.getElementById('incident-entity').innerText : 'UNKNOWN'}</div>
+            <div><span class="text-[#626A75]">Candidate Evaluation:</span> Generating simulation options...</div>
+            <div><span class="text-[#626A75]">Counterfactual Result:</span> Proposing paired evaluations...</div>
+          </div>
+        `;
+        document.getElementById('agent-decision-trace').innerHTML = traceHtml;
+      }
+
+      if (type === 'RECOVERY_ACTION_EXECUTED') {
+        const meta = event.metadata;
+        setAgentState('RECOVERY_EXEC', `Executing recovery: ${meta.explanation}`);
+        document.getElementById('agent-action-type').innerText = meta.action_type;
+        document.getElementById('agent-action-params').innerText = JSON.stringify(meta.parameters);
+        setPipelineStep('RECOVERY');
+        
+        // Update traffic percentages in the Gateway State Table (Refinement 5)
+        if (meta.action_type === 'REDUCE_GATEWAY_TRAFFIC') {
+          const gw = meta.parameters.gateway;
+          const pct = meta.parameters.traffic_percentage;
+          document.getElementById(`gw-${gw}-pct`).innerText = `${100 - pct}%`;
+        }
+
+        // Render Counterfactual Validation Panel comparative data (Refinement 6)
+        const cf = meta.counterfactual_evaluation;
+        if (cf) {
+          document.getElementById('cf-placeholder').classList.add('hidden');
+          document.getElementById('cf-details').classList.remove('hidden');
+
+          document.getElementById('cf-action-label').innerText = meta.action_type;
+          
+          document.getElementById('cf-with-sr').innerText = `${(cf.with_action.success_rate * 100).toFixed(2)}%`;
+          document.getElementById('cf-with-fr').innerText = `${(cf.with_action.failure_rate * 100).toFixed(2)}%`;
+          document.getElementById('cf-with-latency').innerText = `${cf.with_action.average_latency.toFixed(0)}ms`;
+          document.getElementById('cf-with-rar').innerText = `INR ${cf.with_action.revenue_at_risk.toLocaleString('en-IN')}`;
+
+          document.getElementById('cf-without-sr').innerText = `${(cf.without_action.success_rate * 100).toFixed(2)}%`;
+          document.getElementById('cf-without-fr').innerText = `${(cf.without_action.failure_rate * 100).toFixed(2)}%`;
+          document.getElementById('cf-without-latency').innerText = `${cf.without_action.average_latency.toFixed(0)}ms`;
+          document.getElementById('cf-without-rar').innerText = `INR ${cf.without_action.revenue_at_risk.toLocaleString('en-IN')}`;
+
+          document.getElementById('cf-effect-recovered').innerText = `INR ${cf.effect.revenue_risk_reduction.toLocaleString('en-IN')}`;
+          document.getElementById('cf-confidence-interval').innerText = `INR ${cf.confidence_interval_lower.toLocaleString('en-IN')} - INR ${cf.confidence_interval_upper.toLocaleString('en-IN')}`;
+        }
+
+        // Render Post-Execution Prediction Telemetry (Refinement 6)
+        const tel = meta.prediction_telemetry;
+        if (tel && cf) {
+          document.getElementById('cf-telemetry').classList.remove('hidden');
+
+          document.getElementById('tel-pred-sr').innerText = `${(tel.predicted_success_rate * 100).toFixed(2)}%`;
+          document.getElementById('tel-pred-rar').innerText = `INR ${parseFloat(tel.predicted_revenue_at_risk).toLocaleString('en-IN')}`;
+
+          document.getElementById('tel-act-sr').innerText = `${(tel.actual_success_rate * 100).toFixed(2)}%`;
+          document.getElementById('tel-act-rar').innerText = `INR ${parseFloat(tel.actual_revenue_at_risk).toLocaleString('en-IN')}`;
+
+          document.getElementById('tel-err-sr').innerText = `${(tel.success_rate_error * 100).toFixed(2)}%`;
+          document.getElementById('tel-err-rar').innerText = `INR ${parseFloat(tel.revenue_at_risk_error).toLocaleString('en-IN')}`;
+        }
+
+        // Structured Agent Decision Trace Logging (Refinement 2)
+        let cfSnippet = '--';
+        if (cf) {
+          cfSnippet = `WITH: ${(cf.with_action.success_rate * 100).toFixed(1)}% SR, WITHOUT: ${(cf.without_action.success_rate * 100).toFixed(1)}% SR`;
+        }
+        const traceHtml = `
+          <div class="text-[#E5534B] font-bold">● INCIDENT DETECTED</div>
+          <div class="pl-2.5 border-l border-[#E5534B]/30 space-y-1">
+            <div><span class="text-[#626A75]">Observation:</span> Anomaly Score: ${document.getElementById('incident-ml-score').innerText}</div>
+            <div><span class="text-[#626A75]">Diagnosis:</span> ${document.getElementById('incident-type').innerText} on ${document.getElementById('incident-entity') ? document.getElementById('incident-entity').innerText : 'UNKNOWN'}</div>
+            <div><span class="text-[#626A75]">Counterfactual Result:</span> ${cfSnippet}</div>
+            <div><span class="text-[#626A75]">Policy Result:</span> Success improvement CI supports recovery action</div>
+            <div><span class="text-[#626A75]">Selected Action:</span> ${meta.action_type}</div>
+            <div><span class="text-[#626A75]">Execution Result:</span> ACCEPTED. Advancing simulation.</div>
+          </div>
+        `;
+        document.getElementById('agent-decision-trace').innerHTML = traceHtml;
+      }
+
+      if (type === 'RECOVERY_COMPLETED') {
+        window.activeIncidentStartedAt = null;
+        if (event.status === 'HEALTHY') {
+          // System Reset
+          setAgentState('MONITORING', 'All systems operating within normal parameters.');
+          document.getElementById('status-dot').className = "w-1.5 h-1.5 rounded-[1px] bg-[#34A853] animate-pulse";
+          document.getElementById('status-text').innerText = "SYSTEM STATUS: NOMINAL";
+          document.getElementById('status-text').className = "font-bold text-[#E6E8EB] uppercase tracking-wide";
+          
+          document.getElementById('incident-banner').classList.add('hidden');
+          document.getElementById('healthy-placeholder').classList.remove('hidden');
+          document.getElementById('cf-placeholder').classList.remove('hidden');
+          document.getElementById('cf-details').classList.add('hidden');
+          document.getElementById('cf-telemetry').classList.add('hidden');
+
+          document.getElementById('metric-sr').innerText = "100.00%";
+          document.getElementById('metric-rar').innerText = "INR 0.00";
+          document.getElementById('metric-recovered').innerText = "INR 0.00";
+          document.getElementById('agent-action-type').innerText = "NONE";
+          document.getElementById('agent-action-params').innerText = "--";
+
+          document.getElementById('header-sr').innerText = "100.00%";
+          
+          // Reset gateway stats and rows
+          resetGatewayStats();
+          
+          // Clear timelines
+          timelineLabels.length = 0;
+          successRateData.length = 0;
+          revenueRiskData.length = 0;
+          chart.update();
+
+          // Structured Agent Decision Trace Logging (Refinement 2)
+          document.getElementById('agent-decision-trace').innerHTML = `<div class="text-[#626A75]">STATUS: NOMINAL · MONITORING ACTIVE</div>`;
+        } else {
+          setAgentState('RECOVERY_OK', 'Recovery action successful. Restoring traffic.');
+          document.getElementById('status-dot').className = "w-1.5 h-1.5 rounded-[1px] bg-[#34A853] animate-pulse";
+          document.getElementById('status-text').innerText = "RECOVERED";
+          document.getElementById('status-text').className = "font-bold text-[#34A853] uppercase tracking-wide";
+          
+          // Calculate recovered revenue from metrics
+          const rarVal = parseFloat(document.getElementById('metric-rar').innerText.replace(/[^\d.-]/g, ''));
+          document.getElementById('metric-recovered').innerText = `INR ${rarVal.toLocaleString('en-IN')}`;
+          document.getElementById('metric-rar').innerText = "INR 0.00";
+
+          // Structured Agent Decision Trace Logging (Refinement 2)
+          const meta = event.metadata;
+          const recoveryOutcome = `Recovery successful. SR: ${(meta.after_success_rate * 100).toFixed(2)}% (was ${(meta.before_success_rate * 100).toFixed(2)}%)`;
+          const traceHtml = `
+            <div class="text-[#34A853] font-bold">● RECOVERY COMPLETED</div>
+            <div class="pl-2.5 border-l border-[#34A853]/30 space-y-1">
+              <div><span class="text-[#626A75]">Recovery Evaluation:</span> ${recoveryOutcome}</div>
+              <div><span class="text-[#626A75]">Status:</span> Back to normal monitoring.</div>
+            </div>
+          `;
+          document.getElementById('agent-decision-trace').innerHTML = traceHtml;
+        }
+      }
+    }
+
+    function renderTransactionRow(tx) {
+      const feed = document.getElementById('transaction-feed');
+      
+      // Remove empty placeholder row if exists
+      if (feed.rows.length === 1 && feed.rows[0].cells.length === 1 && feed.rows[0].cells[0].innerText.includes('NO DATA')) {
+        feed.innerHTML = '';
+      }
+
+      const row = document.createElement('tr');
+      row.className = "border-b border-[#292E35]/40 hover:bg-[#15191E]/30";
+      
+      const time = tx.timestamp.split('T')[1].substring(0, 8);
+      const isSuccess = tx.event_type === 'PAYMENT_SUCCESS';
+      
+      row.innerHTML = `
+        <td class="py-2 font-mono text-[#626A75]">${time}</td>
+        <td class="py-2 font-mono font-bold text-[#9299A3]">${tx.transaction_id}</td>
+        <td class="py-2 text-[#E6E8EB] uppercase">${tx.gateway || '--'}</td>
+        <td class="py-2 text-[#9299A3]">${tx.payment_method || '--'} | ${tx.bank || '--'}</td>
+        <td class="py-2 font-bold text-[#E6E8EB]">INR ${tx.amount.toFixed(2)}</td>
+        <td class="py-2">
+          <span class="px-1.5 py-0.5 rounded-[1px] text-[10px] font-bold ${isSuccess ? 'bg-[#34A853]/10 text-[#34A853] border border-[#34A853]/20' : 'bg-[#E5534B]/10 text-[#E5534B] border border-[#E5534B]/20'}">
+            ${isSuccess ? 'SUCCESS' : 'FAILED'}
+          </span>
+        </td>
+      `;
+
+      feed.prepend(row);
+
+      // Bound visible rows to 10
+      if (feed.rows.length > 10) {
+        feed.deleteRow(feed.rows.length - 1);
+      }
+    }
+
+    function updateChartData(time, sr, rar) {
+      timelineLabels.push(time);
+      successRateData.push(sr);
+      revenueRiskData.push(rar);
+
+      if (timelineLabels.length > maxDataPoints) {
+        timelineLabels.shift();
+        successRateData.shift();
+        revenueRiskData.shift();
+      }
+
+      chart.update();
+    }
+
+    function setAgentState(status, message) {
+      document.getElementById('agent-status').innerText = status;
+      
+      const dot = document.getElementById('agent-dot');
+      if (status === 'MONITORING') dot.className = "w-1.5 h-1.5 bg-[#626A75] rounded-[1px]";
+      else if (status === 'RECOVERY_OK') dot.className = "w-1.5 h-1.5 bg-[#34A853] rounded-[1px] animate-pulse";
+      else dot.className = "w-1.5 h-1.5 bg-[#5B8DEF] rounded-[1px] animate-pulse";
+    }
+
+    // API calls for demo controls
+    async function startTraffic() {
+      await fetch('/api/demo/traffic/start', { method: 'POST' });
+      fetchTrafficStatus();
+    }
+
+    async function stopTraffic() {
+      await fetch('/api/demo/traffic/stop', { method: 'POST' });
+      fetchTrafficStatus();
+    }
+
+    async function injectIncident(type, target) {
+      await fetch('/api/demo/incidents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ incident_type: type, target: target })
+      });
+    }
+
+    async function resetSystem() {
+      await fetch('/api/demo/reset', { method: 'POST' });
+    }
+
+    async function fetchTrafficStatus() {
+      const res = await fetch('/api/demo/traffic/status');
+      const status = await res.json();
+      
+      const btnStart = document.getElementById('btn-start');
+      const btnStop = document.getElementById('btn-stop');
+      
+      if (status.running) {
+        btnStart.className = "w-full bg-[#15191E] text-[#626A75] border border-[#292E35] rounded-[2px] py-1.5 font-bold text-[10px] tracking-wider cursor-not-allowed flex items-center justify-center space-x-1.5";
+        btnStart.disabled = true;
+        btnStop.className = "w-full bg-[#111418] hover:bg-[#15191E] text-[#9299A3] border border-[#292E35] rounded-[2px] py-1.5 font-bold text-[10px] tracking-wider transition flex items-center justify-center space-x-1.5";
+        btnStop.disabled = false;
+        document.getElementById('metric-tps').innerText = `${status.tps.toFixed(1)} TPS`;
+        document.getElementById('header-tps').innerText = `${status.tps.toFixed(1)} TPS`;
+      } else {
+        btnStart.className = "w-full bg-[#34A853] hover:bg-[#34A853]/85 text-white rounded-[2px] py-1.5 font-bold text-[10px] tracking-wider transition flex items-center justify-center space-x-1.5 shadow-sm";
+        btnStart.disabled = false;
+        btnStop.className = "w-full bg-[#15191E] text-[#626A75] border border-[#292E35] rounded-[2px] py-1.5 font-bold text-[10px] tracking-wider cursor-not-allowed flex items-center justify-center space-x-1.5";
+        btnStop.disabled = true;
+        document.getElementById('metric-tps').innerText = `0.0 TPS`;
+        document.getElementById('header-tps').innerText = `0.0 TPS`;
+      }
+    }
+
+    // Startup
+    window.addEventListener('load', () => {
+      initChart();
+      connectWS();
+    });
+  </script>
+</body>
+</html>

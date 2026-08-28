@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GenericStore Checkout</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .checkout-modal {
+      background-color: rgba(15, 23, 42, 0.75);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-white shadow-sm border-b sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <i class="fa-solid fa-bag-shopping text-blue-600 text-2xl"></i>
+        <span class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">GenericStore</span>
+      </div>
+      <div class="flex items-center space-x-6 text-sm font-medium">
+        <a href="#" class="text-slate-600 hover:text-blue-600">Home</a>
+        <a href="#" class="text-slate-600 hover:text-blue-600">Categories</a>
+        <a href="#" class="text-slate-600 hover:text-blue-600">Support</a>
+        <div class="relative cursor-pointer text-slate-700 hover:text-blue-600">
+          <i class="fa-solid fa-cart-shopping text-xl"></i>
+          <span class="absolute -top-2 -right-2 bg-blue-600 text-white rounded-full text-xs w-4 h-4 flex items-center justify-center font-bold">1</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-grow max-w-6xl mx-auto px-4 py-8 w-full">
+    <h2 class="text-3xl font-extrabold tracking-tight text-slate-900 mb-8">Featured Products</h2>
+    
+    <div id="products-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <!-- Loading placeholders -->
+      <div class="animate-pulse bg-white border rounded-xl p-4 h-80 flex flex-col justify-between">
+        <div class="bg-slate-200 h-40 rounded-lg"></div>
+        <div class="h-6 bg-slate-200 rounded w-3/4 my-2"></div>
+        <div class="h-4 bg-slate-200 rounded w-1/2 mb-4"></div>
+        <div class="h-10 bg-slate-200 rounded w-full"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Checkout Modal Overlay -->
+  <div id="checkout-modal" class="fixed inset-0 z-50 flex items-center justify-center checkout-modal hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+      
+      <!-- Checkout Header -->
+      <div class="bg-slate-900 text-white p-5 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+          <i class="fa-solid fa-lock text-emerald-500"></i>
+          <div>
+            <h3 class="font-bold text-lg">Secure Checkout</h3>
+            <p class="text-xs text-slate-400">Powered by PaymentPulse Gateways</p>
+          </div>
+        </div>
+        <button onclick="closeCheckout()" class="text-slate-400 hover:text-white transition">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+
+      <!-- Warning Bar -->
+      <div class="bg-amber-50 border-b border-amber-200 px-5 py-2 text-center text-xs text-amber-800 font-semibold flex items-center justify-center space-x-1">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>SIMULATION MODE ONLY - NO REAL MONEY WILL BE MOVED</span>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 overflow-y-auto flex-grow" id="checkout-body">
+        
+        <!-- Step 1: Input details -->
+        <div id="checkout-step-input">
+          <!-- Summary Card -->
+          <div class="bg-slate-50 border rounded-xl p-4 mb-6 flex justify-between items-center">
+            <div>
+              <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Product</p>
+              <h4 id="checkout-product-name" class="font-bold text-slate-800 text-sm">--</h4>
+              <p class="text-xs text-slate-500 mt-1">Merchant: <span class="font-medium text-slate-700">merchant_retail_001</span></p>
+            </div>
+            <div class="text-right">
+              <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Amount</p>
+              <span id="checkout-product-price" class="font-extrabold text-blue-600 text-lg">INR 0.00</span>
+            </div>
+          </div>
+
+          <!-- Form Details -->
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Customer Email</label>
+              <input type="email" id="customer-email" value="demo@paymentpulse.local" class="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 cursor-not-allowed" disabled>
+            </div>
+
+            <!-- Payment Method Tabs -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Payment Method</label>
+              <div class="grid grid-cols-4 gap-2 mb-4">
+                <button onclick="setMethod('UPI')" id="btn-method-UPI" class="border rounded-lg py-2 flex flex-col items-center justify-center text-xs font-semibold hover:bg-slate-50 transition border-blue-600 text-blue-600 bg-blue-50">
+                  <i class="fa-solid fa-mobile-screen-button text-lg mb-1"></i>
+                  <span>UPI</span>
+                </button>
+                <button onclick="setMethod('CARD')" id="btn-method-CARD" class="border rounded-lg py-2 flex flex-col items-center justify-center text-xs font-semibold hover:bg-slate-50 transition border-slate-200">
+                  <i class="fa-regular fa-credit-card text-lg mb-1"></i>
+                  <span>Card</span>
+                </button>
+                <button onclick="setMethod('NETBANKING')" id="btn-method-NETBANKING" class="border rounded-lg py-2 flex flex-col items-center justify-center text-xs font-semibold hover:bg-slate-50 transition border-slate-200">
+                  <i class="fa-solid fa-building-columns text-lg mb-1"></i>
+                  <span>Netbank</span>
+                </button>
+                <button onclick="setMethod('WALLET')" id="btn-method-WALLET" class="border rounded-lg py-2 flex flex-col items-center justify-center text-xs font-semibold hover:bg-slate-50 transition border-slate-200">
+                  <i class="fa-solid fa-wallet text-lg mb-1"></i>
+                  <span>Wallet</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Dynamic Form Configurations -->
+            <div id="method-details-container" class="bg-slate-50 border rounded-xl p-4">
+              <!-- UPI Form -->
+              <div id="form-UPI">
+                <label class="block text-xs font-semibold text-slate-500 mb-1">UPI ID</label>
+                <input type="text" id="upi-id" value="demo@upi" class="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <p class="text-xs text-slate-400 mt-1"><i class="fa-solid fa-circle-info"></i> Enter <span class="font-semibold text-slate-600">demo@upi</span> for simulations.</p>
+              </div>
+
+              <!-- Card Form -->
+              <div id="form-CARD" class="hidden space-y-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-500 mb-1">Card Number</label>
+                  <input type="text" id="card-number" value="4111 1111 1111 1111" class="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <p class="text-xs text-slate-400 mt-1"><i class="fa-solid fa-circle-info"></i> Enter <span class="font-semibold text-slate-600">4111 1111 1111 1111</span> for simulations.</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Expiry</label>
+                    <input type="text" value="12/28" class="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">CVV</label>
+                    <input type="password" value="123" class="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Netbanking Form -->
+              <div id="form-NETBANKING" class="hidden">
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Select Bank</label>
+                <select id="bank-select" class="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                  <option value="HDFC Bank">HDFC Bank</option>
+                  <option value="ICICI Bank">ICICI Bank</option>
+                  <option value="SBI">SBI</option>
+                  <option value="Axis Bank">Axis Bank</option>
+                  <option value="Kotak Mahindra Bank">Kotak Mahindra Bank</option>
+                </select>
+              </div>
+
+              <!-- Wallet Form -->
+              <div id="form-WALLET" class="hidden">
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Select Wallet Provider</label>
+                <select class="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                  <option value="PAYTM">Paytm</option>
+                  <option value="PHONEPE">PhonePe</option>
+                  <option value="AMAZONPAY">AmazonPay</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button onclick="startPayment()" class="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-3 font-bold shadow-md shadow-blue-200 transition mt-4 flex items-center justify-center space-x-2">
+              <i class="fa-solid fa-credit-card"></i>
+              <span>Pay INR <span id="checkout-btn-price">0.00</span></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2: Processing Loader -->
+        <div id="checkout-step-processing" class="hidden py-8 flex flex-col items-center justify-center text-center">
+          <div class="relative w-20 h-20 mb-6">
+            <div class="absolute inset-0 rounded-full border-4 border-slate-100"></div>
+            <div class="absolute inset-0 rounded-full border-4 border-blue-600 border-t-transparent animate-spin"></div>
+            <div class="absolute inset-0 flex items-center justify-center">
+              <i class="fa-solid fa-shield text-blue-600 text-xl animate-pulse"></i>
+            </div>
+          </div>
+          <h4 class="font-extrabold text-lg text-slate-800 mb-2">Processing Your Payment</h4>
+          <p class="text-xs text-slate-500 max-w-xs mx-auto">Please do not refresh the page. We are securely routing your transaction through the gateway network.</p>
+          
+          <div class="w-full max-w-xs bg-slate-100 rounded-full h-1 mt-6 overflow-hidden">
+            <div class="bg-blue-600 h-1 animate-pulse" style="width: 75%"></div>
+          </div>
+        </div>
+
+        <!-- Step 3: Success Result -->
+        <div id="checkout-step-success" class="hidden py-6 text-center space-y-4">
+          <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-2xl mx-auto shadow-md">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+          <div>
+            <h4 class="font-extrabold text-xl text-slate-800">Payment Successful</h4>
+            <p class="text-xs text-slate-500 mt-1">Transaction ID: <span id="success-tx-id" class="font-semibold text-slate-700">--</span></p>
+          </div>
+          
+          <div class="bg-slate-50 border rounded-xl p-4 text-left text-xs space-y-2 max-w-sm mx-auto">
+            <div class="flex justify-between">
+              <span class="text-slate-500 font-medium">Gateway Routed:</span>
+              <span id="success-gateway" class="font-bold text-slate-800 uppercase">--</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500 font-medium">Latency:</span>
+              <span id="success-latency" class="font-bold text-slate-800">-- ms</span>
+            </div>
+            <div class="flex justify-between border-t pt-2">
+              <span class="text-slate-500 font-medium">Status:</span>
+              <span class="font-bold text-emerald-600 uppercase">SUCCESS</span>
+            </div>
+          </div>
+
+          <button onclick="closeCheckout()" class="bg-slate-900 hover:bg-slate-800 text-white rounded-lg px-6 py-2 text-xs font-bold transition">
+            Continue Shopping
+          </button>
+        </div>
+
+        <!-- Step 4: Failure Result -->
+        <div id="checkout-step-failure" class="hidden py-6 text-center space-y-4">
+          <div class="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center text-2xl mx-auto shadow-md">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+          <div>
+            <h4 class="font-extrabold text-xl text-slate-800">Payment Failed</h4>
+            <p class="text-xs text-slate-500 mt-1">Transaction ID: <span id="failure-tx-id" class="font-semibold text-slate-700">--</span></p>
+          </div>
+          
+          <div class="bg-slate-50 border rounded-xl p-4 text-left text-xs space-y-2 max-w-sm mx-auto">
+            <div class="flex justify-between">
+              <span class="text-slate-500 font-medium">Gateway Routed:</span>
+              <span id="failure-gateway" class="font-bold text-slate-800 uppercase">--</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500 font-medium">Error Code:</span>
+              <span id="failure-error" class="font-bold text-rose-600 uppercase">--</span>
+            </div>
+            <div class="flex justify-between border-t pt-2">
+              <span class="text-slate-500 font-medium">Status:</span>
+              <span class="font-bold text-rose-600 uppercase">FAILED</span>
+            </div>
+          </div>
+
+          <div class="flex justify-center space-x-3">
+            <button onclick="showInputStep()" class="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-6 py-2 text-xs font-bold transition">
+              Try Again
+            </button>
+            <button onclick="closeCheckout()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg px-6 py-2 text-xs font-bold transition">
+              Cancel
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 text-center text-xs mt-auto">
+    <div class="max-w-6xl mx-auto px-4">
+      <p>&copy; 2026 GenericStore E-Commerce Portal. All rights reserved.</p>
+      <p class="mt-2 text-slate-600">Payment processing powered by simulated PaymentPulse engines. Strict decoupling compliance active.</p>
+    </div>
+  </footer>
+
+  <script>
+    let activeMethod = 'UPI';
+    let currentProduct = null;
+    let products = [];
+
+    // Load Products on startup
+    window.addEventListener('load', async () => {
+      try {
+        const res = await fetch('/api/products');
+        products = await res.json();
+        renderProducts();
+      } catch (err) {
+        console.error('Failed to load products:', err);
+      }
+    });
+
+    function renderProducts() {
+      const grid = document.getElementById('products-grid');
+      grid.innerHTML = '';
+      
+      products.forEach(p => {
+        const card = document.createElement('div');
+        card.className = "bg-white border rounded-2xl shadow-sm p-5 flex flex-col justify-between hover:shadow-md transition duration-200";
+        card.innerHTML = `
+          <div>
+            <img src="${p.image}" class="w-full h-40 object-cover rounded-xl mb-4" alt="${p.name}">
+            <h3 class="font-bold text-slate-800 text-lg mb-1">${p.name}</h3>
+            <p class="text-xs text-slate-500 mb-3">${p.description}</p>
+          </div>
+          <div>
+            <div class="flex justify-between items-center mb-4">
+              <span class="text-xs font-bold text-slate-400 uppercase">Price</span>
+              <span class="font-extrabold text-slate-900 text-lg">INR ${p.price.toLocaleString('en-IN')}</span>
+            </div>
+            <button onclick="openCheckout('${p.product_id}')" class="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-2.5 font-bold text-sm transition">
+              Buy Now
+            </button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function openCheckout(productId) {
+      currentProduct = products.find(p => p.product_id === productId);
+      if (!currentProduct) return;
+
+      document.getElementById('checkout-product-name').innerText = currentProduct.name;
+      document.getElementById('checkout-product-price').innerText = `INR ${currentProduct.price.toLocaleString('en-IN')}`;
+      document.getElementById('checkout-btn-price').innerText = currentProduct.price.toLocaleString('en-IN');
+      
+      showInputStep();
+
+      document.getElementById('checkout-modal').classList.remove('hidden');
+    }
+
+    function closeCheckout() {
+      document.getElementById('checkout-modal').classList.add('hidden');
+      currentProduct = null;
+    }
+
+    function setMethod(method) {
+      // Deactivate current tab style
+      document.getElementById(`btn-method-${activeMethod}`).className = "border rounded-lg py-2 flex flex-col items-center justify-center text-xs font-semibold hover:bg-slate-50 transition border-slate-200";
+      document.getElementById(`form-${activeMethod}`).classList.add('hidden');
+
+      activeMethod = method;
+
+      // Activate new tab style
+      document.getElementById(`btn-method-${activeMethod}`).className = "border rounded-lg py-2 flex flex-col items-center justify-center text-xs font-semibold hover:bg-slate-50 transition border-blue-600 text-blue-600 bg-blue-50";
+      document.getElementById(`form-${activeMethod}`).classList.remove('hidden');
+    }
+
+    function showInputStep() {
+      document.getElementById('checkout-step-input').classList.remove('hidden');
+      document.getElementById('checkout-step-processing').classList.add('hidden');
+      document.getElementById('checkout-step-success').classList.add('hidden');
+      document.getElementById('checkout-step-failure').classList.add('hidden');
+    }
+
+    async function startPayment() {
+      // Change to processing step
+      document.getElementById('checkout-step-input').classList.add('hidden');
+      document.getElementById('checkout-step-processing').classList.remove('hidden');
+
+      // Resolve dynamic values
+      let bank = 'HDFC Bank';
+      if (activeMethod === 'NETBANKING') {
+        bank = document.getElementById('bank-select').value;
+      } else if (activeMethod === 'UPI') {
+        bank = 'SBI'; // default simulated bank routing for UPI
+      }
+
+      const checkoutPayload = {
+        amount: currentProduct.price,
+        payment_method: activeMethod,
+        bank: bank,
+        merchant: "merchant_retail_001"
+      };
+
+      try {
+        // Step 1: Initiate payment via checkout endpoint
+        const checkoutRes = await fetch('/api/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(checkoutPayload)
+        });
+        
+        if (!checkoutRes.ok) {
+          throw new Error('Checkout initiation failed');
+        }
+        
+        const initData = await checkoutRes.json();
+        const txId = initData.transaction_id;
+        const gateway = initData.gateway;
+
+        // Introduce a slight processing delay to show loading state (1.5 seconds)
+        await new Promise(r => setTimeout(r, 1500));
+
+        // Step 2: Execute/process payment via execute endpoint
+        const executeRes = await fetch('/api/payment/execute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ transaction_id: txId })
+        });
+
+        if (!executeRes.ok) {
+          throw new Error('Payment execution failed');
+        }
+
+        const outcome = await executeRes.json();
+        
+        // Hide loader
+        document.getElementById('checkout-step-processing').classList.add('hidden');
+
+        if (outcome.status === 'SUCCESS') {
+          // Render success screen
+          document.getElementById('success-tx-id').innerText = txId;
+          document.getElementById('success-gateway').innerText = gateway;
+          document.getElementById('success-latency').innerText = outcome.latency_ms;
+          document.getElementById('checkout-step-success').classList.remove('hidden');
+        } else {
+          // Render failure screen
+          document.getElementById('failure-tx-id').innerText = txId;
+          document.getElementById('failure-gateway').innerText = gateway;
+          document.getElementById('failure-error').innerText = outcome.error_code || 'UNKNOWN_ERROR';
+          document.getElementById('checkout-step-failure').classList.remove('hidden');
+        }
+
+      } catch (err) {
+        console.error('Payment Flow Error:', err);
+        document.getElementById('checkout-step-processing').classList.add('hidden');
+        
+        document.getElementById('failure-tx-id').innerText = 'ERROR';
+        document.getElementById('failure-gateway').innerText = 'UNKNOWN';
+        document.getElementById('failure-error').innerText = 'CONNECTION_FAILED';
+        document.getElementById('checkout-step-failure').classList.remove('hidden');
+      }
+    }
+  </script>
+</body>
+</html>
