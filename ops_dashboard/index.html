@@ -45,27 +45,27 @@
     <!-- Navigation links -->
     <nav class="flex-grow p-4 space-y-1 overflow-y-auto">
       <div class="text-[9px] font-bold text-[#626A75] uppercase tracking-wider px-2 mb-2">Workspace</div>
-      <a href="#" class="flex items-center space-x-2.5 px-3 py-2 rounded-[2px] text-xs font-semibold bg-[#15191E] text-[#E6E8EB] border border-[#292E35]">
-        <i class="fa-solid fa-house text-[#E6E8EB]"></i>
+      <a href="#overview" id="nav-overview" onclick="navigate('overview'); return false;" class="flex items-center space-x-2.5 px-3 py-2 rounded-[2px] text-xs font-semibold bg-[#15191E] text-[#E6E8EB] border border-[#292E35]">
+        <i class="fa-solid fa-house"></i>
         <span>Overview</span>
       </a>
-      <a href="#" class="flex items-center space-x-2.5 px-3 py-2 rounded-[2px] text-xs font-semibold text-[#9299A3] hover:bg-[#15191E]/50 hover:text-[#E6E8EB] transition">
+      <a href="#incidents" id="nav-incidents" onclick="navigate('incidents'); return false;" class="flex items-center space-x-2.5 px-3 py-2 rounded-[2px] text-xs font-semibold text-[#9299A3] hover:bg-[#15191E]/50 hover:text-[#E6E8EB] transition border border-transparent">
         <i class="fa-solid fa-circle-exclamation"></i>
         <span>Incidents</span>
       </a>
-      <a href="#" class="flex items-center space-x-2.5 px-3 py-2 rounded-[2px] text-xs font-semibold text-[#9299A3] hover:bg-[#15191E]/50 hover:text-[#E6E8EB] transition">
+      <a href="#gateways" id="nav-gateways" onclick="navigate('gateways'); return false;" class="flex items-center space-x-2.5 px-3 py-2 rounded-[2px] text-xs font-semibold text-[#9299A3] hover:bg-[#15191E]/50 hover:text-[#E6E8EB] transition border border-transparent">
         <i class="fa-solid fa-circle-nodes"></i>
         <span>Gateways</span>
       </a>
-      <a href="#" class="flex items-center space-x-2.5 px-3 py-2 rounded-[2px] text-xs font-semibold text-[#9299A3] hover:bg-[#15191E]/50 hover:text-[#E6E8EB] transition">
+      <a href="#payments" id="nav-payments" onclick="navigate('payments'); return false;" class="flex items-center space-x-2.5 px-3 py-2 rounded-[2px] text-xs font-semibold text-[#9299A3] hover:bg-[#15191E]/50 hover:text-[#E6E8EB] transition border border-transparent">
         <i class="fa-solid fa-credit-card"></i>
         <span>Payments</span>
       </a>
-      <a href="#" class="flex items-center space-x-2.5 px-3 py-2 rounded-[2px] text-xs font-semibold text-[#9299A3] hover:bg-[#15191E]/50 hover:text-[#E6E8EB] transition">
+      <a href="#recovery" id="nav-recovery" onclick="navigate('recovery'); return false;" class="flex items-center space-x-2.5 px-3 py-2 rounded-[2px] text-xs font-semibold text-[#9299A3] hover:bg-[#15191E]/50 hover:text-[#E6E8EB] transition border border-transparent">
         <i class="fa-solid fa-screwdriver-wrench"></i>
         <span>Recovery</span>
       </a>
-      <a href="#" class="flex items-center space-x-2.5 px-3 py-2 rounded-[2px] text-xs font-semibold text-[#9299A3] hover:bg-[#15191E]/50 hover:text-[#E6E8EB] transition">
+      <a href="#events" id="nav-events" onclick="navigate('events'); return false;" class="flex items-center space-x-2.5 px-3 py-2 rounded-[2px] text-xs font-semibold text-[#9299A3] hover:bg-[#15191E]/50 hover:text-[#E6E8EB] transition border border-transparent">
         <i class="fa-solid fa-list-ul"></i>
         <span>Events</span>
       </a>
@@ -126,11 +126,11 @@
       </div>
     </header>
 
-    <!-- Main Workspace Content -->
+    <!-- Main Workspace Content Container -->
     <main class="p-6 space-y-6 max-w-7xl w-full mx-auto">
       
-      <!-- Metrics Bar Strip (Phase UI-1) -->
-      <div class="bg-[#111418] border border-[#292E35] rounded-[2px] p-2 flex flex-row items-center divide-x divide-[#292E35] text-[#E6E8EB] select-none">
+      <!-- Metrics Bar Strip -->
+      <div id="sec-metrics" class="bg-[#111418] border border-[#292E35] rounded-[2px] p-2 flex flex-row items-center divide-x divide-[#292E35] text-[#E6E8EB] select-none">
         <!-- SUCCESS RATE -->
         <div class="flex-1 px-4 py-1">
           <div class="text-[10px] font-bold text-[#9299A3] uppercase tracking-wider">SUCCESS RATE</div>
@@ -169,98 +169,101 @@
         </div>
       </div>
 
-      <!-- Active Incident Panel: Primary Visual Focus (Phase UI-1) -->
-      <div id="incident-banner" class="bg-[#111418] border-l-4 border-l-[#E5534B] border border-[#292E35] rounded-[2px] p-4 text-[#E6E8EB] hidden font-sans">
-        <!-- Header Strip -->
-        <div class="flex justify-between items-center border-b border-[#292E35] pb-2 mb-3">
-          <div class="flex items-center space-x-3">
-            <span class="bg-[#E5534B]/10 text-[#E5534B] border border-[#E5534B]/30 text-[10px] font-bold px-2 py-0.5 rounded-[1px]" id="incident-severity">CRITICAL</span>
-            <span class="font-mono text-xs font-bold text-[#E6E8EB]" id="incident-type">GATEWAY DEGRADATION</span>
-          </div>
-          <span class="font-mono text-xs text-[#9299A3]" id="incident-id">INC-0000</span>
-        </div>
-
-        <!-- Layout Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
-          <!-- Column 1: Affected Entity Info -->
-          <div class="space-y-1.5 border-r border-[#292E35]/50 pr-4" id="incident-entity-container">
-            <div class="text-[10px] text-[#9299A3] uppercase tracking-wider font-semibold">AFFECTED ENTITY</div>
-            <div class="font-mono text-sm font-bold text-[#E6E8EB] truncate" id="incident-entity">gateway_gamma</div>
-            <div class="text-[10px] font-mono text-[#9299A3]" id="incident-sub-details">UPI · HDFC Bank</div>
+      <!-- Incident Panel Section -->
+      <div id="sec-incident" class="space-y-4">
+        <!-- Active Incident Panel: Primary Visual Focus -->
+        <div id="incident-banner" class="bg-[#111418] border-l-4 border-l-[#E5534B] border border-[#292E35] rounded-[2px] p-4 text-[#E6E8EB] hidden font-sans">
+          <!-- Header Strip -->
+          <div class="flex justify-between items-center border-b border-[#292E35] pb-2 mb-3">
+            <div class="flex items-center space-x-3">
+              <span class="bg-[#E5534B]/10 text-[#E5534B] border border-[#E5534B]/30 text-[10px] font-bold px-2 py-0.5 rounded-[1px]" id="incident-severity">CRITICAL</span>
+              <span class="font-mono text-xs font-bold text-[#E6E8EB]" id="incident-type">GATEWAY DEGRADATION</span>
+            </div>
+            <span class="font-mono text-xs text-[#9299A3]" id="incident-id">INC-0000</span>
           </div>
 
-          <!-- Column 2: Live Operational Metrics -->
-          <div class="space-y-1 font-mono border-r border-[#292E35]/50 pr-4">
-            <div class="flex justify-between">
-              <span class="text-[#9299A3]">Success</span>
-              <span class="text-[#E6E8EB]" id="incident-success">--%</span>
+          <!-- Layout Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+            <!-- Column 1: Affected Entity Info -->
+            <div class="space-y-1.5 border-r border-[#292E35]/50 pr-4" id="incident-entity-container">
+              <div class="text-[10px] text-[#9299A3] uppercase tracking-wider font-semibold">AFFECTED ENTITY</div>
+              <div class="font-mono text-sm font-bold text-[#E6E8EB] truncate" id="incident-entity">gateway_gamma</div>
+              <div class="text-[10px] font-mono text-[#9299A3]" id="incident-sub-details">UPI · HDFC Bank</div>
             </div>
-            <div class="flex justify-between">
-              <span class="text-[#9299A3]">Failure</span>
-              <span class="text-[#E5534B]" id="incident-failure">--%</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-[#9299A3]">Latency</span>
-              <span class="text-[#E6E8EB]" id="incident-latency">--s</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-[#9299A3]">Revenue Risk</span>
-              <span class="text-[#E5534B]" id="incident-rar">INR 0.00</span>
-            </div>
-          </div>
 
-          <!-- Column 3: AI/ML Diagnostics -->
-          <div class="space-y-1 font-mono border-r border-[#292E35]/50 pr-4">
-            <div class="flex justify-between">
-              <span class="text-[#9299A3]">ML Score</span>
-              <span class="text-[#E6E8EB]" id="incident-ml-score">0.00</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-[#9299A3]">Confidence</span>
-              <span class="text-[#E6E8EB]" id="incident-confidence">0%</span>
-            </div>
-            <div class="flex justify-between mt-2 pt-1 border-t border-[#292E35]/30">
-              <span class="text-[#9299A3]">Started</span>
-              <span class="text-[#E6E8EB]" id="incident-started">00:00:00</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-[#9299A3]">Duration</span>
-              <span class="text-[#D9A441]" id="incident-duration">00:00</span>
-            </div>
-          </div>
-
-          <!-- Column 4: SRE Incident Command / Recovery State -->
-          <div class="space-y-2 pl-2">
-            <div class="text-[10px] text-[#9299A3] uppercase tracking-wider font-semibold">RECOVERY PIPELINE</div>
-            <div class="flex flex-col space-y-1.5 font-mono text-[10px]">
-              <div class="flex items-center space-x-1.5">
-                <span class="w-1.5 h-1.5 rounded-[1px] bg-[#626A75]" id="step-investigating-dot"></span>
-                <span class="text-[#626A75]" id="step-investigating-txt">INVESTIGATING</span>
+            <!-- Column 2: Live Operational Metrics -->
+            <div class="space-y-1 font-mono border-r border-[#292E35]/50 pr-4">
+              <div class="flex justify-between">
+                <span class="text-[#9299A3]">Success</span>
+                <span class="text-[#E6E8EB]" id="incident-success">--%</span>
               </div>
-              <div class="flex items-center space-x-1.5">
-                <span class="w-1.5 h-1.5 rounded-[1px] bg-[#626A75]" id="step-counterfactual-dot"></span>
-                <span class="text-[#626A75]" id="step-counterfactual-txt">COUNTERFACTUAL</span>
+              <div class="flex justify-between">
+                <span class="text-[#9299A3]">Failure</span>
+                <span class="text-[#E5534B]" id="incident-failure">--%</span>
               </div>
-              <div class="flex items-center space-x-1.5">
-                <span class="w-1.5 h-1.5 rounded-[1px] bg-[#626A75]" id="step-recovery-dot"></span>
-                <span class="text-[#626A75]" id="step-recovery-txt">RECOVERY</span>
+              <div class="flex justify-between">
+                <span class="text-[#9299A3]">Latency</span>
+                <span class="text-[#E6E8EB]" id="incident-latency">--s</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-[#9299A3]">Revenue Risk</span>
+                <span class="text-[#E5534B]" id="incident-rar">INR 0.00</span>
               </div>
             </div>
+
+            <!-- Column 3: Diagnostics -->
+            <div class="space-y-1 font-mono border-r border-[#292E35]/50 pr-4">
+              <div class="flex justify-between">
+                <span class="text-[#9299A3]">ML Score</span>
+                <span class="text-[#E6E8EB]" id="incident-ml-score">0.00</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-[#9299A3]">Confidence</span>
+                <span class="text-[#E6E8EB]" id="incident-confidence">0%</span>
+              </div>
+              <div class="flex justify-between mt-2 pt-1 border-t border-[#292E35]/30">
+                <span class="text-[#9299A3]">Started</span>
+                <span class="text-[#E6E8EB]" id="incident-started">00:00:00</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-[#9299A3]">Duration</span>
+                <span class="text-[#D9A441]" id="incident-duration">00:00</span>
+              </div>
+            </div>
+
+            <!-- Column 4: SRE Recovery Pipeline -->
+            <div class="space-y-2 pl-2">
+              <div class="text-[10px] text-[#9299A3] uppercase tracking-wider font-semibold">RECOVERY PIPELINE</div>
+              <div class="flex flex-col space-y-1.5 font-mono text-[10px]">
+                <div class="flex items-center space-x-1.5">
+                  <span class="w-1.5 h-1.5 rounded-[1px] bg-[#626A75]" id="step-investigating-dot"></span>
+                  <span class="text-[#626A75]" id="step-investigating-txt">INVESTIGATING</span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                  <span class="w-1.5 h-1.5 rounded-[1px] bg-[#626A75]" id="step-counterfactual-dot"></span>
+                  <span class="text-[#626A75]" id="step-counterfactual-txt">COUNTERFACTUAL</span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                  <span class="w-1.5 h-1.5 rounded-[1px] bg-[#626A75]" id="step-recovery-dot"></span>
+                  <span class="text-[#626A75]" id="step-recovery-txt">RECOVERY</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Healthy State Panel Placeholder -->
-      <div id="healthy-placeholder" class="bg-[#111418] border border-[#292E35] rounded-[2px] p-4 text-[#9299A3] font-mono text-xs flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-          <span class="w-1.5 h-1.5 bg-[#34A853] rounded-[1px] animate-pulse"></span>
-          <span>STATUS: NOMINAL · MONITORING ACTIVE</span>
+        <!-- Healthy State Panel Placeholder -->
+        <div id="healthy-placeholder" class="bg-[#111418] border border-[#292E35] rounded-[2px] p-4 text-[#9299A3] font-mono text-xs flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span class="w-1.5 h-1.5 bg-[#34A853] rounded-[1px] animate-pulse"></span>
+            <span>STATUS: NOMINAL · MONITORING ACTIVE</span>
+          </div>
+          <span class="text-[#626A75] text-[10px]">NO ACTIVE INCIDENTS</span>
         </div>
-        <span class="text-[#626A75] text-[10px]">ACTIVE INCIDENTS: 0</span>
       </div>
 
       <!-- Gateway State / Traffic Section -->
-      <div class="bg-[#111418] border border-[#292E35] rounded-[2px] p-4 text-[#E6E8EB]">
+      <div id="sec-gateways" class="bg-[#111418] border border-[#292E35] rounded-[2px] p-4 text-[#E6E8EB]">
         <h4 class="font-bold text-xs text-[#9299A3] uppercase tracking-wider mb-3 pb-1 border-b border-[#292E35]">
           <i class="fa-solid fa-circle-nodes mr-2 text-[#5B8DEF]"></i>Gateway Status & Traffic Routing
         </h4>
@@ -313,7 +316,7 @@
       </div>
 
       <!-- Counterfactual Comparison Decision Panel -->
-      <div class="bg-[#111418] border border-[#292E35] rounded-[2px] p-4 text-[#E6E8EB]">
+      <div id="sec-counterfactual" class="bg-[#111418] border border-[#292E35] rounded-[2px] p-4 text-[#E6E8EB]">
         <h4 class="font-bold text-xs text-[#9299A3] uppercase tracking-wider mb-3 pb-1 border-b border-[#292E35]">
           <i class="fa-solid fa-scale-balanced mr-2 text-[#D9A441]"></i>Counterfactual Validation & Projections
         </h4>
@@ -419,18 +422,18 @@
         </div>
       </div>
 
-      <!-- Historical Operations Timeline (Moved below active state) -->
-      <div class="bg-[#111418] border border-[#292E35] rounded-[2px] p-5 min-h-[260px]">
+      <!-- Historical Operations Timeline -->
+      <div id="sec-timeline" class="bg-[#111418] border border-[#292E35] rounded-[2px] p-5 min-h-[260px]">
         <h4 class="font-bold text-xs text-[#9299A3] uppercase tracking-wider mb-4 border-b border-[#292E35] pb-1">METRICS TIMELINE</h4>
         <div class="w-full relative h-[180px]">
           <canvas id="metricsChart"></canvas>
         </div>
       </div>
 
-      <!-- Agent Trace Panel & Live Transaction Feed -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- Agent Decision Trace Panel (Renamed Reasoning Log) -->
-        <div class="bg-[#111418] border border-[#292E35] rounded-[2px] p-5 flex flex-col space-y-4">
+      <!-- Agent Trace Panel & Live Event Feed Grid -->
+      <div id="grid-trace-events" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Agent Decision Trace Panel -->
+        <div id="sec-agent-trace" class="bg-[#111418] border border-[#292E35] rounded-[2px] p-5 flex flex-col space-y-4">
           <h4 class="font-bold text-xs text-[#9299A3] uppercase tracking-wider border-b border-[#292E35] pb-2">
             <i class="fa-solid fa-terminal mr-2 text-[#5B8DEF]"></i>Agent Decision Trace
           </h4>
@@ -464,8 +467,8 @@
           </div>
         </div>
 
-        <!-- Live Transaction Feed -->
-        <div class="bg-[#111418] border border-[#292E35] rounded-[2px] p-5 md:col-span-2">
+        <!-- Live Transaction / Event Stream -->
+        <div id="sec-events" class="bg-[#111418] border border-[#292E35] rounded-[2px] p-5 md:col-span-2">
           <h4 class="font-bold text-xs text-[#9299A3] uppercase tracking-wider mb-4 border-b border-[#292E35] pb-2">
             <i class="fa-solid fa-list mr-2 text-[#5B8DEF]"></i>Live Event Stream
           </h4>
@@ -508,7 +511,131 @@
     const successRateData = [];
     const revenueRiskData = [];
 
-    // Local state tracking for live client-side gateway performance metrics
+    // ==========================================
+    // SPA View State & Navigation Engine
+    // ==========================================
+    const validViews = ['overview', 'incidents', 'gateways', 'payments', 'recovery', 'events'];
+    let currentView = 'overview';
+
+    function navigate(view) {
+      if (!validViews.includes(view)) view = 'overview';
+      window.location.hash = view;
+    }
+
+    function setActiveView(view) {
+      if (!validViews.includes(view)) view = 'overview';
+      currentView = view;
+
+      // 1. Update Active State on Sidebar Items
+      validViews.forEach(v => {
+        const el = document.getElementById(`nav-${v}`);
+        if (el) {
+          if (v === view) {
+            el.className = "flex items-center space-x-2.5 px-3 py-2 rounded-[2px] text-xs font-semibold bg-[#15191E] text-[#E6E8EB] border border-[#292E35]";
+          } else {
+            el.className = "flex items-center space-x-2.5 px-3 py-2 rounded-[2px] text-xs font-semibold text-[#9299A3] hover:bg-[#15191E]/50 hover:text-[#E6E8EB] transition border border-transparent";
+          }
+        }
+      });
+
+      // 2. Obtain references to DOM workspace sections
+      const secMetrics = document.getElementById('sec-metrics');
+      const secIncident = document.getElementById('sec-incident');
+      const secGateways = document.getElementById('sec-gateways');
+      const secCounterfactual = document.getElementById('sec-counterfactual');
+      const secTimeline = document.getElementById('sec-timeline');
+      const gridTraceEvents = document.getElementById('grid-trace-events');
+      const secAgentTrace = document.getElementById('sec-agent-trace');
+      const secEvents = document.getElementById('sec-events');
+
+      // 3. Switch workspace layout based on selected view
+      if (view === 'overview') {
+        secMetrics.classList.remove('hidden');
+        secIncident.classList.remove('hidden');
+        secGateways.classList.remove('hidden');
+        secCounterfactual.classList.remove('hidden');
+        secTimeline.classList.remove('hidden');
+        gridTraceEvents.classList.remove('hidden');
+        secAgentTrace.classList.remove('hidden');
+        secEvents.classList.remove('hidden');
+
+        gridTraceEvents.className = "grid grid-cols-1 md:grid-cols-3 gap-6";
+        secAgentTrace.className = "bg-[#111418] border border-[#292E35] rounded-[2px] p-5 flex flex-col space-y-4";
+        secEvents.className = "bg-[#111418] border border-[#292E35] rounded-[2px] p-5 md:col-span-2";
+
+        if (chart) chart.resize();
+      } else if (view === 'incidents') {
+        secMetrics.classList.add('hidden');
+        secIncident.classList.remove('hidden');
+        secGateways.classList.add('hidden');
+        secCounterfactual.classList.add('hidden');
+        secTimeline.classList.add('hidden');
+        gridTraceEvents.classList.remove('hidden');
+        secAgentTrace.classList.remove('hidden');
+        secEvents.classList.add('hidden');
+
+        gridTraceEvents.className = "grid grid-cols-1 gap-6";
+        secAgentTrace.className = "bg-[#111418] border border-[#292E35] rounded-[2px] p-5 flex flex-col space-y-4 w-full";
+      } else if (view === 'gateways') {
+        secMetrics.classList.add('hidden');
+        secIncident.classList.add('hidden');
+        secGateways.classList.remove('hidden');
+        secCounterfactual.classList.add('hidden');
+        secTimeline.classList.add('hidden');
+        gridTraceEvents.classList.add('hidden');
+      } else if (view === 'payments') {
+        secMetrics.classList.add('hidden');
+        secIncident.classList.add('hidden');
+        secGateways.classList.add('hidden');
+        secCounterfactual.classList.add('hidden');
+        secTimeline.classList.add('hidden');
+        gridTraceEvents.classList.remove('hidden');
+        secAgentTrace.classList.add('hidden');
+        secEvents.classList.remove('hidden');
+
+        gridTraceEvents.className = "grid grid-cols-1 gap-6";
+        secEvents.className = "bg-[#111418] border border-[#292E35] rounded-[2px] p-5 w-full";
+      } else if (view === 'recovery') {
+        secMetrics.classList.add('hidden');
+        secIncident.classList.add('hidden');
+        secGateways.classList.add('hidden');
+        secCounterfactual.classList.remove('hidden');
+        secTimeline.classList.add('hidden');
+        gridTraceEvents.classList.remove('hidden');
+        secAgentTrace.classList.remove('hidden');
+        secEvents.classList.add('hidden');
+
+        gridTraceEvents.className = "grid grid-cols-1 gap-6";
+        secAgentTrace.className = "bg-[#111418] border border-[#292E35] rounded-[2px] p-5 flex flex-col space-y-4 w-full";
+      } else if (view === 'events') {
+        secMetrics.classList.add('hidden');
+        secIncident.classList.add('hidden');
+        secGateways.classList.add('hidden');
+        secCounterfactual.classList.add('hidden');
+        secTimeline.classList.add('hidden');
+        gridTraceEvents.classList.remove('hidden');
+        secAgentTrace.classList.add('hidden');
+        secEvents.classList.remove('hidden');
+
+        gridTraceEvents.className = "grid grid-cols-1 gap-6";
+        secEvents.className = "bg-[#111418] border border-[#292E35] rounded-[2px] p-5 w-full";
+      }
+    }
+
+    function handleHashChange() {
+      const hash = window.location.hash.replace('#', '').toLowerCase();
+      if (validViews.includes(hash)) {
+        setActiveView(hash);
+      } else {
+        setActiveView('overview');
+      }
+    }
+
+    window.addEventListener('hashchange', handleHashChange);
+
+    // ==========================================
+    // In-Memory Gateway Telemetry State
+    // ==========================================
     const gatewayStats = {
       gateway_alpha: { successes: 0, total: 0, latencies: [] },
       gateway_beta: { successes: 0, total: 0, latencies: [] },
@@ -543,7 +670,6 @@
           }
         }
 
-        // Calculate and update UI
         const sr = (stats.successes / stats.total) * 100;
         const avgLat = stats.latencies.length 
           ? Math.round(stats.latencies.reduce((a,b) => a+b, 0) / stats.latencies.length) 
@@ -618,7 +744,7 @@
       });
     }
 
-    // Connect to Websockets
+    // Connect to WebSocket (Only ONE connection)
     function connectWS() {
       const loc = window.location;
       const wsUrl = (loc.protocol === 'https:' ? 'wss://' : 'ws://') + loc.host + '/ws/events';
@@ -644,7 +770,6 @@
     // Global active incident started timestamp
     window.activeIncidentStartedAt = null;
 
-    // Timer to update duration in SRE panel
     setInterval(() => {
       const durationEl = document.getElementById('incident-duration');
       if (window.activeIncidentStartedAt && durationEl) {
@@ -665,7 +790,6 @@
         'RECOVERY': { dot: 'step-recovery-dot', txt: 'step-recovery-txt' }
       };
       
-      // Default all to disabled
       for (const k in steps) {
         document.getElementById(steps[k].dot).className = "w-1.5 h-1.5 rounded-[1px] bg-[#626A75]";
         document.getElementById(steps[k].txt).className = "text-[#626A75]";
@@ -689,31 +813,44 @@
       }
     }
 
-    // Component Contract Incident Renderer (Refinement 12)
     function renderIncident(incidentData) {
       const { incidentType, incidentId, affectedEntity, severity, anomalyScore, confidence, startedAt, subDetailsStr } = incidentData;
       
-      // 1. Strict Contract Validation for affectedEntity
-      let entityTextHtml = '';
+      const container = document.getElementById('incident-entity-container');
       if (!affectedEntity) {
         console.error("DATA CONTRACT ERROR: affectedEntity parameter is missing in incident payload.", incidentData);
-        entityTextHtml = `
+        container.innerHTML = `
           <div class="text-[10px] text-[#E5534B] uppercase tracking-wider font-semibold">TARGET</div>
           <div class="font-mono text-xs font-bold text-[#E5534B]">DATA CONTRACT ERROR</div>
           <div class="text-[10px] font-mono text-[#E5534B]">Affected entity unavailable</div>
         `;
       } else {
-        entityTextHtml = `
-          <div class="text-[10px] text-[#9299A3] uppercase tracking-wider font-semibold">AFFECTED ENTITY</div>
-          <div class="font-mono text-sm font-bold text-[#E6E8EB] truncate" id="incident-entity">${affectedEntity}</div>
-          <div class="text-[10px] font-mono text-[#9299A3]" id="incident-sub-details">${subDetailsStr || '--'}</div>
-        `;
+        const entEl = document.getElementById('incident-entity');
+        const subEl = document.getElementById('incident-sub-details');
+        if (entEl && subEl) {
+          entEl.innerText = affectedEntity;
+          subEl.innerText = subDetailsStr || '--';
+        } else {
+          container.innerHTML = '';
+          const label = document.createElement('div');
+          label.className = 'text-[10px] text-[#9299A3] uppercase tracking-wider font-semibold';
+          label.textContent = 'AFFECTED ENTITY';
+          const ent = document.createElement('div');
+          ent.className = 'font-mono text-sm font-bold text-[#E6E8EB] truncate';
+          ent.id = 'incident-entity';
+          ent.textContent = affectedEntity;
+          const sub = document.createElement('div');
+          sub.className = 'text-[10px] font-mono text-[#9299A3]';
+          sub.id = 'incident-sub-details';
+          sub.textContent = subDetailsStr || '--';
+          container.appendChild(label);
+          container.appendChild(ent);
+          container.appendChild(sub);
+        }
       }
-
-      // Update DOM components after validation checks
+      
       document.getElementById('incident-type').innerText = incidentType.replace(/_/g, ' ');
       document.getElementById('incident-id').innerText = incidentId;
-      document.getElementById('incident-entity-container').innerHTML = entityTextHtml;
       
       const sevBadge = document.getElementById('incident-severity');
       sevBadge.innerText = severity;
@@ -734,12 +871,10 @@
         window.activeIncidentStartedAt = date;
       }
 
-      // 2. Terse Clinical Status indicators (Item 10)
       document.getElementById('status-dot').className = "w-1.5 h-1.5 rounded-[1px] bg-[#E5534B] animate-pulse";
       document.getElementById('status-text').innerText = `INCIDENT · ${affectedEntity || 'UNKNOWN'} · ${severity}`;
       document.getElementById('status-text').className = "font-bold text-[#E5534B] uppercase tracking-wide";
 
-      // Toggle display views
       document.getElementById('incident-banner').classList.remove('hidden');
       document.getElementById('healthy-placeholder').classList.add('hidden');
       setPipelineStep('INVESTIGATING');
@@ -748,7 +883,7 @@
     function handleIncomingEvent(event) {
       const type = event.event_type;
 
-      // 1. Handle Transaction outcome events for the live stream table
+      // 1. Transaction events
       if (type === 'PAYMENT_SUCCESS' || type === 'PAYMENT_FAILED') {
         renderTransactionRow(event);
         if (event.gateway) {
@@ -756,7 +891,7 @@
         }
       }
 
-      // 2. Handle Live metric updates
+      // 2. Metrics update events
       if (type === 'REVENUE_RISK_UPDATED') {
         const sr = event.metadata.success_rate * 100;
         const fr = event.metadata.failure_rate * 100;
@@ -770,7 +905,6 @@
         document.getElementById('header-sr').innerText = `${sr.toFixed(2)}%`;
         document.getElementById('system-time').innerText = `TIME: ${event.timestamp.split('.')[0]}Z`;
 
-        // Update active incident panel metrics if currently displayed
         const instSuccess = document.getElementById('incident-success');
         if (instSuccess) instSuccess.innerText = `${sr.toFixed(1)}%`;
         const instFailure = document.getElementById('incident-failure');
@@ -780,7 +914,6 @@
         const instRar = document.getElementById('incident-rar');
         if (instRar) instRar.innerText = `INR ${rar.toLocaleString('en-IN')}`;
 
-        // Change status line on REVENUE AT RISK card
         const rarStatusText = document.getElementById('rar-status-text');
         const rarStatusDot = document.getElementById('rar-status-dot');
         if (rar > 0) {
@@ -791,12 +924,11 @@
             rarStatusDot.className = 'w-1.5 h-1.5 bg-[#34A853] rounded-[1px]';
         }
 
-        // Update timelines
         const timeStr = event.timestamp.split('T')[1].substring(0, 8);
         updateChartData(timeStr, sr, rar);
       }
 
-      // 3. Handle Active Incident detections
+      // 3. Incident detection events
       if (type === 'INCIDENT_DETECTED') {
         const meta = event.metadata;
         const incidentId = meta.incident_id || 'N/A';
@@ -806,7 +938,6 @@
         const confidence = meta.confidence ? `${Math.round(meta.confidence * 100)}%` : '--%';
         const startedAt = meta.started_at;
 
-        // Build list of all applicable sub details
         let subDetails = [];
         if (event.payment_method) subDetails.push(event.payment_method);
         if (event.bank) subDetails.push(event.bank);
@@ -814,7 +945,6 @@
         if (event.location) subDetails.push(event.location);
         const subDetailsStr = subDetails.join(' · ') || '--';
 
-        // Render incident via the component contract method (Item 12)
         renderIncident({
           incidentType,
           incidentId,
@@ -826,7 +956,6 @@
           subDetailsStr
         });
 
-        // Update gateway status card badge if gateway type incident
         if (event.gateway) {
           const badge = document.getElementById(`gw-${event.gateway}-status`);
           if (badge) {
@@ -840,7 +969,6 @@
           }
         }
 
-        // Structured Agent Decision Trace Logging (Refinement 2)
         const traceHtml = `
           <div class="text-[#E5534B] font-bold">● INCIDENT DETECTED</div>
           <div class="pl-2.5 border-l border-[#E5534B]/30 space-y-1">
@@ -852,7 +980,7 @@
         document.getElementById('agent-decision-trace').innerHTML = traceHtml;
       }
 
-      // 4. Handle recovery steps
+      // 4. Recovery actions
       if (type === 'RECOVERY_ACTION_PROPOSED') {
         setAgentState('EVALUATING', 'Evaluating simulation dry-run matrix...');
         setPipelineStep('COUNTERFACTUAL');
@@ -876,14 +1004,12 @@
         document.getElementById('agent-action-params').innerText = JSON.stringify(meta.parameters);
         setPipelineStep('RECOVERY');
         
-        // Update traffic percentages in the Gateway State Table (Refinement 5)
         if (meta.action_type === 'REDUCE_GATEWAY_TRAFFIC') {
           const gw = meta.parameters.gateway;
           const pct = meta.parameters.traffic_percentage;
           document.getElementById(`gw-${gw}-pct`).innerText = `${100 - pct}%`;
         }
 
-        // Render Counterfactual Validation Panel comparative data (Refinement 6)
         const cf = meta.counterfactual_evaluation;
         if (cf) {
           document.getElementById('cf-placeholder').classList.add('hidden');
@@ -905,7 +1031,6 @@
           document.getElementById('cf-confidence-interval').innerText = `INR ${cf.confidence_interval_lower.toLocaleString('en-IN')} - INR ${cf.confidence_interval_upper.toLocaleString('en-IN')}`;
         }
 
-        // Render Post-Execution Prediction Telemetry (Refinement 6)
         const tel = meta.prediction_telemetry;
         if (tel && cf) {
           document.getElementById('cf-telemetry').classList.remove('hidden');
@@ -920,7 +1045,6 @@
           document.getElementById('tel-err-rar').innerText = `INR ${parseFloat(tel.revenue_at_risk_error).toLocaleString('en-IN')}`;
         }
 
-        // Structured Agent Decision Trace Logging (Refinement 2)
         let cfSnippet = '--';
         if (cf) {
           cfSnippet = `WITH: ${(cf.with_action.success_rate * 100).toFixed(1)}% SR, WITHOUT: ${(cf.without_action.success_rate * 100).toFixed(1)}% SR`;
@@ -942,7 +1066,6 @@
       if (type === 'RECOVERY_COMPLETED') {
         window.activeIncidentStartedAt = null;
         if (event.status === 'HEALTHY') {
-          // System Reset
           setAgentState('MONITORING', 'All systems operating within normal parameters.');
           document.getElementById('status-dot').className = "w-1.5 h-1.5 rounded-[1px] bg-[#34A853] animate-pulse";
           document.getElementById('status-text').innerText = "SYSTEM STATUS: NOMINAL";
@@ -962,16 +1085,13 @@
 
           document.getElementById('header-sr').innerText = "100.00%";
           
-          // Reset gateway stats and rows
           resetGatewayStats();
           
-          // Clear timelines
           timelineLabels.length = 0;
           successRateData.length = 0;
           revenueRiskData.length = 0;
           chart.update();
 
-          // Structured Agent Decision Trace Logging (Refinement 2)
           document.getElementById('agent-decision-trace').innerHTML = `<div class="text-[#626A75]">STATUS: NOMINAL · MONITORING ACTIVE</div>`;
         } else {
           setAgentState('RECOVERY_OK', 'Recovery action successful. Restoring traffic.');
@@ -979,12 +1099,10 @@
           document.getElementById('status-text').innerText = "RECOVERED";
           document.getElementById('status-text').className = "font-bold text-[#34A853] uppercase tracking-wide";
           
-          // Calculate recovered revenue from metrics
           const rarVal = parseFloat(document.getElementById('metric-rar').innerText.replace(/[^\d.-]/g, ''));
           document.getElementById('metric-recovered').innerText = `INR ${rarVal.toLocaleString('en-IN')}`;
           document.getElementById('metric-rar').innerText = "INR 0.00";
 
-          // Structured Agent Decision Trace Logging (Refinement 2)
           const meta = event.metadata;
           const recoveryOutcome = `Recovery successful. SR: ${(meta.after_success_rate * 100).toFixed(2)}% (was ${(meta.before_success_rate * 100).toFixed(2)}%)`;
           const traceHtml = `
@@ -1002,7 +1120,6 @@
     function renderTransactionRow(tx) {
       const feed = document.getElementById('transaction-feed');
       
-      // Remove empty placeholder row if exists
       if (feed.rows.length === 1 && feed.rows[0].cells.length === 1 && feed.rows[0].cells[0].innerText.includes('NO DATA')) {
         feed.innerHTML = '';
       }
@@ -1028,8 +1145,8 @@
 
       feed.prepend(row);
 
-      // Bound visible rows to 10
-      if (feed.rows.length > 10) {
+      // Bound visible rows to 50
+      if (feed.rows.length > 50) {
         feed.deleteRow(feed.rows.length - 1);
       }
     }
@@ -1057,7 +1174,7 @@
       else dot.className = "w-1.5 h-1.5 bg-[#5B8DEF] rounded-[1px] animate-pulse";
     }
 
-    // API calls for demo controls
+    // Demo controls
     async function startTraffic() {
       await fetch('/api/demo/traffic/start', { method: 'POST' });
       fetchTrafficStatus();
@@ -1108,6 +1225,7 @@
     window.addEventListener('load', () => {
       initChart();
       connectWS();
+      handleHashChange();
     });
   </script>
 </body>
