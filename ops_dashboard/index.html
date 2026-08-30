@@ -117,13 +117,13 @@
           <span class="w-1.5 h-1.5 rounded-[1px] bg-[#34A853] animate-pulse" id="status-dot"></span>
           <span class="font-bold text-[#E6E8EB] uppercase tracking-wide" id="status-text">SYSTEM STATUS: NOMINAL</span>
         </div>
-        <div class="text-[#9299A3] text-[10px] font-mono" id="system-sim-time">SIM TIME: 2026-01-01 00:00:00 UTC</div>
+        <div class="text-[#9299A3] text-[10px] font-mono" id="system-sim-time">SIM TIME: 2026-01-01 05:30:00 IST</div>
       </div>
       
       <div class="flex items-center space-x-6">
         <div class="text-[10px] font-semibold text-[#9299A3] uppercase">TXN RATE: <span class="text-[#E6E8EB] font-mono ml-1" id="header-tps">0.0 TPS</span></div>
         <div class="text-[10px] font-semibold text-[#9299A3] uppercase">LAST 20 SR: <span class="text-[#E6E8EB] font-mono ml-1" id="header-sr">100.00%</span></div>
-        <div class="text-[#626A75] text-[10px] font-mono" id="system-wall-time">LAST EVENT: --:--:--</div>
+        <div class="text-[#626A75] text-[10px] font-mono" id="system-wall-time">LAST EVENT: --:--:-- IST</div>
       </div>
     </header>
 
@@ -771,24 +771,19 @@
     window.addEventListener('hashchange', handleHashChange);
 
     // ==========================================
-    // Timestamp & Simulation Time Engine
+    // Timestamp & Simulation Time Engine (India Standard Time - IST)
     // ==========================================
     function formatSimTime(date) {
-      if (!date || isNaN(date.getTime())) return 'SIM TIME: 2026-01-01 00:00:00 UTC';
-      const pad = (n) => String(n).padStart(2, '0');
-      const y = date.getUTCFullYear();
-      const m = pad(date.getUTCMonth() + 1);
-      const d = pad(date.getUTCDate());
-      const hh = pad(date.getUTCHours());
-      const mm = pad(date.getUTCMinutes());
-      const ss = pad(date.getUTCSeconds());
-      return `SIM TIME: ${y}-${m}-${d} ${hh}:${mm}:${ss} UTC`;
+      if (!date || isNaN(date.getTime())) return 'SIM TIME: 2026-01-01 05:30:00 IST';
+      const dStr = date.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+      const tStr = date.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false });
+      return `SIM TIME: ${dStr} ${tStr} IST`;
     }
 
     function formatTimeOnly(date) {
-      if (!date || isNaN(date.getTime())) return '--:--:--';
-      const pad = (n) => String(n).padStart(2, '0');
-      return `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}`;
+      if (!date || isNaN(date.getTime())) return '--:--:-- IST';
+      const tStr = date.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false });
+      return `${tStr} IST`;
     }
 
     function updateSimulationClocks(simIsoStr, wallIsoStr) {
@@ -798,9 +793,11 @@
       }
       if (wallIsoStr) {
         state.lastWallDate = new Date(wallIsoStr);
-        document.getElementById('system-wall-time').innerText = `LAST EVENT: ${state.lastWallDate.toLocaleTimeString()}`;
+        const tStr = state.lastWallDate.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false });
+        document.getElementById('system-wall-time').innerText = `LAST EVENT: ${tStr} IST`;
       } else {
-        document.getElementById('system-wall-time').innerText = `LAST EVENT: ${new Date().toLocaleTimeString()}`;
+        const tStr = new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false });
+        document.getElementById('system-wall-time').innerText = `LAST EVENT: ${tStr} IST`;
       }
 
       // Update Simulated Incident Duration
