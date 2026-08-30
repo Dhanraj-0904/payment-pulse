@@ -13,6 +13,10 @@ class EventBus:
     def subscribe(self, callback: Callable[[PaymentEvent], Any]):
         self._subscribers.append(callback)
 
+    def unsubscribe(self, callback: Callable[[PaymentEvent], Any]):
+        if callback in self._subscribers:
+            self._subscribers.remove(callback)
+
     def register_ws(self, ws: Any):
         self._ws_connections.add(ws)
 

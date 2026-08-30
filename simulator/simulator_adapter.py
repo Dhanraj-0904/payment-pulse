@@ -89,7 +89,8 @@ class SimulatorAdapter:
             bank=bank,
             gateway=gateway,
             merchant=merchant,
-            status="INITIATED"
+            status="INITIATED",
+            metadata={"sim_time": self.simulator.simulation_time.isoformat()}
         )
         event_bus.publish(init_evt)
 
@@ -103,7 +104,8 @@ class SimulatorAdapter:
             bank=bank,
             gateway=gateway,
             merchant=merchant,
-            status="PROCESSING"
+            status="PROCESSING",
+            metadata={"sim_time": self.simulator.simulation_time.isoformat()}
         )
         event_bus.publish(proc_evt)
 
@@ -200,7 +202,8 @@ class SimulatorAdapter:
             metadata={
                 "error_code": record.error_code,
                 "latency_ms": record.latency_ms,
-                "incident_id": record.incident_id
+                "incident_id": record.incident_id,
+                "sim_time": record.timestamp.isoformat()
             }
         )
         event_bus.publish(outcome_evt)
