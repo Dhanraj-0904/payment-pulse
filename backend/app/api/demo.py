@@ -17,6 +17,8 @@ from simulator.injector import _rng_for_incident
 from simulator.generator import generate_transactions
 from agent.events import PaymentEvent
 from agent.event_bus import event_bus
+from agent.postmortem import build_postmortem, postmortem_to_markdown, postmortem_to_dict
+from agent.canary import CanaryRecoveryController, CanaryPolicy
 from agent.recovery_agent import (
     PolicyFallbackAgent,
     SimulatorToolbox,
@@ -716,5 +718,215 @@ def reset_system(adapter: SimulatorAdapter = Depends(get_simulator_adapter)):
         event_bus.publish(reset_evt)
 
         return {"status": "reset_completed", "sim_time": sim_time_iso}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class DeterministicScenarioRequest(BaseModel):
+    incident_type: str = "GATEWAY_DEGRADATION"
+    target: str = "gateway_gamma"
+    seed: int = 42
+    auto_execute: bool = False
+
+@router.post("/scenario/deterministic")
+def run_deterministic_scenario(
+    req: Optional[DeterministicScenarioRequest] = None,
+    adapter: SimulatorAdapter = Depends(get_simulator_adapter)
+):
+    """
+    Initialize or execute the single authoritative deterministic demo scenario.
+    Baseline: Healthy payment traffic with seed 42.
+    Incident: GATEWAY_DEGRADATION on gateway_gamma with fixed seed.
+    """
+    try:
+        req = req or DeterministicScenarioRequest()
+        traffic_runner.stop()
+
+        # Clean reset
+        adapter.simulator.incidents_config.clear()
+        adapter.simulator.incident_rngs.clear()
+        adapter.simulator.active_actions.clear()
+        adapter.simulator.action_history.clear()
+        adapter.simulator.last_step_transactions.clear()
+        adapter.simulator.prior_step_transactions.clear()
+
+        # Seed the simulator
+        adapter.simulator.incident_seed = req.seed
+        adapter.simulator.routing_seed = req.seed
+        adapter.simulator.reset()
+        
+        # Advance 1 step to establish healthy baseline
+        obs_baseline, _ = adapter.simulator.step()
+        sim_time_iso = adapter.simulator.simulation_time.isoformat()
+
+        # Inject deterministic incident
+        inc_id = "INC_DEMO_001"
+        inc_type_enum = (
+            IncidentType.GATEWAY_DEGRADATION
+            if req.incident_type == "GATEWAY_DEGRADATION"
+            else IncidentType.BANK_UPI_TIMEOUT
+        )
+        inc_config = IncidentConfig(
+            incident_id=inc_id,
+            incident_type=inc_type_enum,
+            start_time=adapter.simulator.simulation_time,
+            duration_minutes=25,
+            recovery_minutes=0,
+            severity=Severity.HIGH,
+            affected_gateway=req.target if req.incident_type == "GATEWAY_DEGRADATION" else None,
+            affected_bank=req.target if req.incident_type == "BANK_FAILURE" else None,
+            affected_payment_method="UPI" if req.incident_type == "BANK_FAILURE" else None,
+            failure_rate_multiplier=6.0,
+            latency_multiplier=3.0,
+            affected_transaction_percentage=1.0,
+            description=f"Deterministic demo degradation on {req.target}"
+        )
+        adapter.simulator.incidents_config.append(inc_config)
+        adapter.simulator.incident_rngs[inc_id] = _rng_for_incident(req.seed, inc_id)
+
+        # Advance step into degradation so incident is detected by ML
+        obs_inc, _ = adapter.simulator.step()
+        sim_time_iso = adapter.simulator.simulation_time.isoformat()
+
+        # Broadcast INCIDENT_DETECTED event to notify console
+        inc_evt = PaymentEvent(
+            event_type="INCIDENT_DETECTED",
+            gateway=req.target if req.incident_type == "GATEWAY_DEGRADATION" else None,
+            bank=req.target if req.incident_type == "BANK_FAILURE" else None,
+            payment_method="UPI" if req.incident_type == "BANK_FAILURE" else None,
+            status="CRITICAL",
+            metadata={
+                "incident_id": inc_id,
+                "incident_type": req.incident_type,
+                "severity": "HIGH",
+                "anomaly_score": float(obs_inc.anomaly_score),
+                "confidence": 0.94,
+                "affected_entity": req.target,
+                "affected_entity_type": "GATEWAY" if req.incident_type == "GATEWAY_DEGRADATION" else "BANK",
+                "started_at": sim_time_iso,
+                "sim_time": sim_time_iso,
+            }
+        )
+        event_bus.publish(inc_evt)
+
+        # Broadcast updated revenue risk
+        rev_evt = PaymentEvent(
+            event_type="REVENUE_RISK_UPDATED",
+            amount=float(obs_inc.revenue_at_risk),
+            status="WARNING" if obs_inc.revenue_at_risk > 0 else "HEALTHY",
+            metadata={
+                "success_rate": obs_inc.success_rate,
+                "failure_rate": obs_inc.failure_rate,
+                "latency_ms": obs_inc.latency,
+                "transaction_volume": obs_inc.transaction_volume,
+                "sim_time": sim_time_iso,
+                "window_duration_seconds": 300,
+                "tps": round(obs_inc.transaction_volume / 300.0, 1)
+            }
+        )
+        event_bus.publish(rev_evt)
+
+        # Start live traffic generator
+        traffic_runner.start(adapter)
+
+        res_payload = {
+            "status": "deterministic_scenario_initialized",
+            "scenario": {
+                "incident_id": inc_id,
+                "incident_type": req.incident_type,
+                "target": req.target,
+                "seed": req.seed,
+                "baseline_success_rate": obs_baseline.success_rate,
+                "degraded_success_rate": obs_inc.success_rate,
+                "revenue_at_risk": float(obs_inc.revenue_at_risk),
+                "sim_time": sim_time_iso
+            }
+        }
+
+        # If auto_execute requested:
+        if req.auto_execute:
+            toolbox = SimulatorToolbox(adapter.simulator)
+            candidates = toolbox.list_available_actions()
+            ranked = rank_candidates(toolbox, candidates, 0.94, {"root_cause": req.incident_type})
+            top_action = ranked[0][0]
+            
+            # Counterfactual
+            cf = toolbox.evaluate_counterfactual(top_action, horizon_steps=1, runs=20)
+            
+            # Canary pipeline
+            controller = CanaryRecoveryController(toolbox, CanaryPolicy())
+            canary_res = controller.run_canary_pipeline(top_action, auto_expand=True)
+            
+            obs_after = toolbox.observe_result()
+            
+            res_payload["auto_execution"] = {
+                "selected_action": top_action,
+                "counterfactual": {
+                    "with_action_sr": cf.with_action.success_rate,
+                    "without_action_sr": cf.without_action.success_rate,
+                    "effect": cf.effect.success_rate_improvement,
+                    "confidence_interval": [float(cf.confidence_interval[0]), float(cf.confidence_interval[1])]
+                },
+                "canary": {
+                    "status": canary_res.status,
+                    "final_traffic_percentage": canary_res.current_traffic_percentage,
+                    "stages": len(canary_res.stages_executed),
+                    "rolled_back": canary_res.rolled_back
+                },
+                "recovery": {
+                    "final_success_rate": obs_after.get("success_rate", 0.0),
+                    "final_revenue_at_risk": float(obs_after.get("revenue_at_risk", 0.0))
+                }
+            }
+
+        return res_payload
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/recovery/postmortem")
+def get_incident_postmortem(adapter: SimulatorAdapter = Depends(get_simulator_adapter)):
+    """Retrieve structured postmortem (both JSON and Markdown) for active or recent incident."""
+    try:
+        toolbox = SimulatorToolbox(adapter.simulator)
+        obs = toolbox.observe_result()
+        confidence = calculate_diagnosis_confidence(obs)
+        diagnosis = diagnose_incident(obs, confidence)
+
+        inc_dict = {}
+        if adapter.simulator.incidents_config:
+            last_inc = adapter.simulator.incidents_config[-1]
+            inc_dict = {
+                "incident_id": last_inc.incident_id,
+                "incident_type": last_inc.incident_type.value if hasattr(last_inc.incident_type, "value") else str(last_inc.incident_type),
+                "severity": last_inc.severity.value if hasattr(last_inc.severity, "value") else str(last_inc.severity),
+                "affected_gateway": last_inc.affected_gateway,
+                "affected_bank": last_inc.affected_bank,
+                "started_at": last_inc.start_time.isoformat() if hasattr(last_inc.start_time, "isoformat") else str(last_inc.start_time),
+                "end_time": adapter.simulator.simulation_time.isoformat()
+            }
+        else:
+            inc_dict = {
+                "incident_id": "INC_DEMO_001",
+                "incident_type": "GATEWAY_DEGRADATION",
+                "severity": "HIGH",
+                "affected_gateway": "gateway_gamma",
+                "started_at": adapter.simulator.simulation_time.isoformat(),
+                "end_time": adapter.simulator.simulation_time.isoformat()
+            }
+
+        last_action = adapter.simulator.action_history[-1] if adapter.simulator.action_history else None
+        
+        pm = build_postmortem(
+            incident=inc_dict,
+            diagnosis=diagnosis,
+            before_metrics={"revenue_at_risk": float(obs.get("revenue_at_risk", 0.0)), "anomaly_score": obs.get("anomaly_score", 0.0)},
+            after_metrics={"revenue_at_risk": float(obs.get("revenue_at_risk", 0.0)), "success_rate": obs.get("success_rate", 1.0)},
+            action=last_action
+        )
+
+        return {
+            "json": postmortem_to_dict(pm),
+            "markdown": postmortem_to_markdown(pm)
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

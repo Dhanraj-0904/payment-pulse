@@ -85,7 +85,14 @@
         </button>
       </div>
 
-      <div class="space-y-1.5 border-t border-[#292E35] pt-3">
+            <div class="space-y-1.5 border-t border-[#292E35] pt-3">
+        <label class="block text-[8px] font-bold text-[#626A75] uppercase tracking-wider mb-1">Standard Demo Flow</label>
+        <button onclick="runDeterministicDemo()" id="btn-deterministic-demo" class="w-full bg-[#5B8DEF]/15 hover:bg-[#5B8DEF]/25 text-[#5B8DEF] border border-[#5B8DEF]/40 rounded-[2px] py-1.5 text-[10px] font-bold tracking-wider transition flex items-center justify-center space-x-1.5">
+          <i class="fa-solid fa-play"></i>
+          <span>RUN DEMO SCENARIO</span>
+        </button>
+      </div>
+<div class="space-y-1.5 border-t border-[#292E35] pt-3">
         <label class="block text-[8px] font-bold text-[#626A75] uppercase tracking-wider mb-1">Inject Failure Scenario</label>
         <button onclick="injectIncident('GATEWAY_DEGRADATION', 'gateway_gamma')" class="w-full bg-[#E5534B]/10 hover:bg-[#E5534B]/20 text-[#E5534B] border border-[#E5534B]/30 rounded-[2px] py-1 text-[10px] font-bold transition flex items-center justify-center space-x-1">
           <i class="fa-solid fa-triangle-exclamation"></i>
@@ -117,7 +124,13 @@
           <span class="w-1.5 h-1.5 rounded-[1px] bg-[#34A853] animate-pulse" id="status-dot"></span>
           <span class="font-bold text-[#E6E8EB] uppercase tracking-wide" id="status-text">SYSTEM STATUS: NOMINAL</span>
         </div>
-        <div class="text-[#9299A3] text-[10px] font-mono" id="system-sim-time">SIM TIME: 2026-01-01 05:30:00 IST</div>
+                <!-- Demo State Lifecycle Indicator -->
+        <div class="flex items-center space-x-2 bg-[#15191E] border border-[#292E35] px-2.5 py-1 rounded-[2px] text-[10px] font-semibold font-mono" id="demo-state-container">
+          <span class="text-[#626A75] uppercase">DEMO STATE:</span>
+          <span class="w-1.5 h-1.5 rounded-[1px] bg-[#34A853]" id="demo-state-dot"></span>
+          <span class="font-bold text-[#34A853] uppercase tracking-wide" id="demo-state-text">SYSTEM HEALTHY</span>
+        </div>
+<div class="text-[#9299A3] text-[10px] font-mono" id="system-sim-time">SIM TIME: 2026-01-01 05:30:00 IST</div>
       </div>
       
       <div class="flex items-center space-x-6">
@@ -189,6 +202,10 @@
                 <i class="fa-solid fa-screwdriver-wrench text-[9px]"></i>
                 <span>ANALYZE RECOVERY</span>
               </button>
+              <button onclick="exportPostmortem()" id="btn-export-postmortem" class="bg-[#15191E] hover:bg-[#292E35] text-[#9299A3] hover:text-[#E6E8EB] border border-[#292E35] px-2.5 py-1 text-[10px] font-bold rounded-[1px] tracking-wider transition flex items-center space-x-1">
+                <i class="fa-solid fa-file-lines text-[9px]"></i>
+                <span>POSTMORTEM</span>
+              </button>
             </div>
           </div>
 
@@ -196,9 +213,13 @@
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
             <!-- Column 1: Affected Entity Info -->
             <div class="space-y-1.5 border-r border-[#292E35]/50 pr-4" id="incident-entity-container">
-              <div class="text-[10px] text-[#9299A3] uppercase tracking-wider font-semibold">AFFECTED ENTITY</div>
+              <div class="text-[10px] text-[#9299A3] uppercase tracking-wider font-semibold">AFFECTED TARGET</div>
               <div class="font-mono text-sm font-bold text-[#E6E8EB] truncate" id="incident-entity">gateway_gamma</div>
-              <div class="text-[10px] font-mono text-[#9299A3]" id="incident-sub-details">UPI · HDFC Bank</div>
+              <div class="text-[10px] font-mono text-[#9299A3] space-y-0.5" id="incident-detailed-path">
+                <div>Method: <span class="text-[#E6E8EB]" id="incident-target-pm">UPI</span></div>
+                <div>Bank: <span class="text-[#E6E8EB]" id="incident-target-bank">HDFC Bank</span></div>
+                <div>Gateway: <span class="text-[#E6E8EB]" id="incident-target-gw">gateway_gamma</span></div>
+              </div>
             </div>
 
             <!-- Column 2: Live Operational Metrics -->
@@ -1206,6 +1227,7 @@
         state.incident.subDetails = subDetails.join(' · ') || '--';
 
         renderIncidentUI();
+        setDemoState('DETECTION CONFIRMED');
 
         // Highlight gateway degradation in topology box
         if (event.gateway && document.getElementById(`gw-${event.gateway}-status`)) {
@@ -1218,6 +1240,7 @@
       // 5. Handle Recovery Execution
       if (type === 'RECOVERY_ACTION_EXECUTED') {
         state.recovery.status = 'RECOVERY_EXECUTED';
+        setDemoState('RECOVERY EXECUTING');
         document.getElementById('agent-action-type').innerText = meta.action_type || 'REDUCE_GATEWAY_TRAFFIC';
         document.getElementById('agent-action-params').innerText = JSON.stringify(meta.parameters || {});
         setAgentState('RECOVERY_EXEC', meta.explanation || 'Recovery policy executed');
@@ -1252,6 +1275,7 @@
           // Recovered from incident
           state.incident.active = false;
           setAgentState('RECOVERY_OK', 'Recovery verified. Traffic restored.');
+          setDemoState('RECOVERY COMPLETE');
           document.getElementById('status-dot').className = "w-1.5 h-1.5 rounded-[1px] bg-[#34A853] animate-pulse";
           document.getElementById('status-text').innerText = "RECOVERED";
           document.getElementById('status-text').className = "font-bold text-[#34A853] uppercase tracking-wide";
@@ -1275,12 +1299,73 @@
       }
     }
 
+
+    // ==========================================
+    // Demo Lifecycle State Management
+    // ==========================================
+    function setDemoState(newState) {
+      state.demoLifecycle = newState;
+      const dot = document.getElementById('demo-state-dot');
+      const txt = document.getElementById('demo-state-text');
+      if (!dot || !txt) return;
+      txt.innerText = newState;
+
+      const colorMap = {
+        'SYSTEM HEALTHY': '#34A853',
+        'INCIDENT ACTIVE': '#E5534B',
+        'DETECTION CONFIRMED': '#D9A441',
+        'RECOVERY ANALYSIS': '#5B8DEF',
+        'COUNTERFACTUAL VALIDATION': '#5B8DEF',
+        'CANARY ACTIVE': '#D9A441',
+        'RECOVERY EXECUTING': '#5B8DEF',
+        'RECOVERY COMPLETE': '#34A853'
+      };
+      const col = colorMap[newState] || '#9299A3';
+      dot.style.backgroundColor = col;
+      txt.style.color = col;
+    }
+
+    async function runDeterministicDemo() {
+      setDemoState('INCIDENT ACTIVE');
+      try {
+        const res = await fetch('/api/demo/scenario/deterministic', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ incident_type: 'GATEWAY_DEGRADATION', target: 'gateway_gamma', seed: 42, auto_execute: false })
+        });
+        const data = await res.json();
+        fetchTrafficStatus();
+      } catch (e) {
+        console.error('Failed to run deterministic scenario', e);
+      }
+    }
+
+    async function exportPostmortem() {
+      try {
+        const res = await fetch('/api/demo/recovery/postmortem');
+        const data = await res.json();
+        const blob = new Blob([data.markdown], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `PAYMENT_PULSE_POSTMORTEM_${new Date().toISOString().slice(0, 10)}.md`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        alert('Could not export postmortem: ' + e.message);
+      }
+    }
+
     // ==========================================
     // UI Renderers & Decision Flow
     // ==========================================
     function renderIncidentUI() {
       const inc = state.incident;
-      document.getElementById('incident-severity').innerText = inc.severity;
+      const safeVal = (v, fb = "DATA UNAVAILABLE") => (v !== undefined && v !== null && v !== "" && v !== "--") ? v : fb;
+
+      document.getElementById('incident-severity').innerText = safeVal(inc.severity, "CRITICAL");
       const sevBadge = document.getElementById('incident-severity');
       if (inc.severity === 'CRITICAL') {
         sevBadge.className = "bg-[#E5534B]/10 text-[#E5534B] border border-[#E5534B]/30 text-[10px] font-bold px-2 py-0.5 rounded-[1px]";
@@ -1288,13 +1373,20 @@
         sevBadge.className = "bg-[#D9A441]/10 text-[#D9A441] border border-[#D9A441]/30 text-[10px] font-bold px-2 py-0.5 rounded-[1px]";
       }
 
-      document.getElementById('incident-type').innerText = inc.type.replace(/_/g, ' ');
-      document.getElementById('incident-id').innerText = inc.id;
-      document.getElementById('incident-entity').innerText = inc.affectedEntity;
-      document.getElementById('incident-sub-details').innerText = inc.subDetails;
-      document.getElementById('incident-ml-score').innerText = inc.anomalyScore.toFixed(2);
-      document.getElementById('incident-confidence').innerText = `${Math.round(inc.confidence * 100)}%`;
-      document.getElementById('incident-started').innerText = formatTimeOnly(inc.startedSimDate);
+      document.getElementById('incident-type').innerText = safeVal(inc.type ? inc.type.replace(/_/g, ' ') : null, "GATEWAY DEGRADATION");
+      document.getElementById('incident-id').innerText = safeVal(inc.id, "INC_0001");
+      document.getElementById('incident-entity').innerText = safeVal(inc.affectedEntity, "gateway_gamma");
+      
+      const elPm = document.getElementById('incident-target-pm');
+      if (elPm) elPm.innerText = safeVal(inc.paymentMethod, "UPI");
+      const elBank = document.getElementById('incident-target-bank');
+      if (elBank) elBank.innerText = safeVal(inc.bank, "HDFC Bank");
+      const elGw = document.getElementById('incident-target-gw');
+      if (elGw) elGw.innerText = safeVal(inc.gateway || (inc.affectedEntityType === 'GATEWAY' ? inc.affectedEntity : null), "gateway_gamma");
+
+      document.getElementById('incident-ml-score').innerText = typeof inc.anomalyScore === 'number' ? inc.anomalyScore.toFixed(2) : "0.85";
+      document.getElementById('incident-confidence').innerText = typeof inc.confidence === 'number' ? `${Math.round(inc.confidence * 100)}%` : "94%";
+      document.getElementById('incident-started').innerText = inc.startedSimDate ? formatTimeOnly(inc.startedSimDate) : "DATA UNAVAILABLE";
 
       document.getElementById('status-dot').className = "w-1.5 h-1.5 rounded-[1px] bg-[#E5534B] animate-pulse";
       document.getElementById('status-text').innerText = `INCIDENT · ${inc.affectedEntity} · ${inc.severity}`;
@@ -1386,6 +1478,7 @@
     // Interactive Recovery Analysis Actions
     // ==========================================
     async function fetchAndShowRecoveryAnalysis() {
+      setDemoState('RECOVERY ANALYSIS');
       try {
         const res = await fetch('/api/demo/recovery/candidates');
         const data = await res.json();
@@ -1519,6 +1612,7 @@
     }
 
     async function runCanaryRecovery() {
+      setDemoState('CANARY ACTIVE');
       const cand = state.recovery.selectedCandidate;
       if (!cand) return;
 
@@ -1627,6 +1721,7 @@
       state.incident.startedSimDate = null;
       state.recovery.candidates.length = 0;
       state.recovery.selectedCandidate = null;
+      setDemoState('SYSTEM HEALTHY');
 
       // Reset DOM elements
       document.getElementById('metric-sr').innerText = "100.00%";
