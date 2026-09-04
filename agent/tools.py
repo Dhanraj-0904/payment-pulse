@@ -158,7 +158,11 @@ class SimulatorToolbox:
 
         try:
             obs_after, outcome = self._simulator.step(action)
-            action_id = outcome.get("action_id") if outcome else None
+            action_id = (
+                (outcome.get("action_id") if outcome else None)
+                or (self._simulator.active_actions[-1].get("action_id") if self._simulator.active_actions else None)
+                or (self._simulator.action_history[-1].get("action_id") if self._simulator.action_history else None)
+            )
             return {
                 "status": "ACCEPTED",
                 "accepted": True,

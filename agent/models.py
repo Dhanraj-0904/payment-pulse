@@ -60,6 +60,7 @@ class AgentTrace:
     reasoning_summary: list[str] = field(default_factory=list)
     counterfactual_evaluation: CounterfactualEvaluation | None = None
     prediction_telemetry: dict[str, Any] | None = None
+    canary_result: Any | None = None
 
 
 @dataclass

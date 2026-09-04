@@ -45,7 +45,7 @@ class CounterfactualEvaluator:
         # Save original simulator variables to guarantee immutability
         orig_time = self.simulator.simulation_time
         orig_active = [copy.deepcopy(act) for act in self.simulator.active_actions]
-        orig_rng_states = {inc_id: rng.getstate() for inc_id, rng in self.simulator.incident_rngs.items()}
+        orig_rng_states = {inc_id: rng.getstate() for inc_id, rng in self.simulator.incident_rngs.items() if rng is not None}
         orig_seed = self.simulator.incident_seed
         orig_last_step = list(self.simulator.last_step_transactions)
         orig_prior_step = list(self.simulator.prior_step_transactions)

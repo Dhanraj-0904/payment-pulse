@@ -38,6 +38,11 @@ class SimulateActionRequest(BaseModel):
 class ExecuteActionRequest(BaseModel):
     action: dict[str, Any]
 
+class CanaryRunRequest(BaseModel):
+    action: dict[str, Any]
+    auto_expand: bool = True
+    initial_percentage: Optional[float] = None
+
 class TrafficRunner:
     def __init__(self):
         self.running = False
@@ -562,6 +567,122 @@ def execute_recovery_action(req: ExecuteActionRequest, adapter: SimulatorAdapter
         }
     except HTTPException:
         raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/recovery/canary/policy")
+def get_canary_policy():
+    """Retrieve current canary recovery policy configuration."""
+    from agent.canary import CanaryPolicy
+    policy = CanaryPolicy()
+    return {
+        "initial_traffic_percentage": policy.initial_traffic_percentage,
+        "traffic_stages": policy.traffic_stages,
+        "max_traffic_percentage": policy.max_traffic_percentage,
+        "min_observation_windows": policy.min_observation_windows,
+        "min_success_rate_threshold": policy.min_success_rate_threshold,
+        "max_latency_ms": policy.max_latency_ms,
+        "max_revenue_risk": str(policy.max_revenue_risk),
+        "max_allowed_blast_radius": policy.max_allowed_blast_radius
+    }
+
+@router.post("/recovery/canary/run")
+def run_canary_recovery(req: CanaryRunRequest, adapter: SimulatorAdapter = Depends(get_simulator_adapter)):
+    """Run progressive Canary Recovery (Control -> Counterfactual -> Canary 5% -> Conditional Expansion)."""
+    try:
+        from agent.canary import CanaryRecoveryController, CanaryPolicy
+        toolbox = SimulatorToolbox(adapter.simulator)
+        policy = CanaryPolicy()
+        if req.initial_percentage is not None and req.initial_percentage > 0:
+            policy.initial_traffic_percentage = req.initial_percentage
+            policy.traffic_stages = [req.initial_percentage] + [s for s in policy.traffic_stages if s > req.initial_percentage]
+
+        controller = CanaryRecoveryController(toolbox, policy)
+
+        # Broadcast canary initiated event
+        sim_time_iso = adapter.simulator.simulation_time.isoformat()
+        start_evt = PaymentEvent(
+            event_type="CANARY_STARTED",
+            status="IN_PROGRESS",
+            metadata={
+                "action_type": req.action.get("action_type"),
+                "initial_percentage": policy.initial_traffic_percentage,
+                "stages": policy.traffic_stages,
+                "sim_time": sim_time_iso
+            }
+        )
+        event_bus.publish(start_evt)
+
+        canary_res = controller.run_canary_pipeline(req.action, auto_expand=req.auto_expand)
+
+        # Broadcast canary evaluation outcome event
+        eval_evt = PaymentEvent(
+            event_type="CANARY_EVALUATED",
+            status=canary_res.status,
+            metadata={
+                "outcome": canary_res.status,
+                "stages_executed": len(canary_res.stages_executed),
+                "final_traffic_percentage": canary_res.current_traffic_percentage,
+                "rolled_back": canary_res.rolled_back,
+                "reason": canary_res.decision_reason,
+                "sim_time": sim_time_iso
+            }
+        )
+        event_bus.publish(eval_evt)
+
+        # Format counterfactual evaluation if present
+        cf_dict = None
+        if canary_res.counterfactual_prediction:
+            cf = canary_res.counterfactual_prediction
+            cf_dict = {
+                "evaluation_id": cf.evaluation_id,
+                "runs": cf.runs,
+                "with_action": {
+                    "success_rate": cf.with_action.success_rate,
+                    "failure_rate": cf.with_action.failure_rate,
+                    "average_latency": cf.with_action.average_latency,
+                    "revenue_at_risk": float(cf.with_action.revenue_at_risk),
+                },
+                "without_action": {
+                    "success_rate": cf.without_action.success_rate,
+                    "failure_rate": cf.without_action.failure_rate,
+                    "average_latency": cf.without_action.average_latency,
+                    "revenue_at_risk": float(cf.without_action.revenue_at_risk),
+                },
+                "effect": {
+                    "success_rate_improvement": cf.effect.success_rate_improvement,
+                    "revenue_risk_reduction": float(cf.effect.revenue_risk_reduction),
+                },
+                "success_rate_ci": [cf.success_rate_ci[0], cf.success_rate_ci[1]],
+                "confidence_interval": [float(cf.confidence_interval[0]), float(cf.confidence_interval[1])],
+            }
+
+        return {
+            "canary_id": canary_res.canary_id,
+            "status": canary_res.status,
+            "current_stage": canary_res.current_stage.value,
+            "current_traffic_percentage": canary_res.current_traffic_percentage,
+            "decision_reason": canary_res.decision_reason,
+            "rolled_back": canary_res.rolled_back,
+            "active_action_id": canary_res.active_action_id,
+            "three_layer_comparison": {
+                "layer_1_control": canary_res.control_metrics,
+                "layer_2_counterfactual": cf_dict,
+                "layer_3_observed_canary": canary_res.observed_canary_metrics
+            },
+            "stages": [
+                {
+                    "stage_index": s.stage_index,
+                    "traffic_percentage": s.traffic_percentage,
+                    "outcome": s.outcome.value,
+                    "reason": s.reason,
+                    "success_rate": s.observation_after.get("success_rate", 0.0),
+                    "latency": s.observation_after.get("latency", 0.0),
+                    "revenue_at_risk": str(s.observation_after.get("revenue_at_risk", "0.00"))
+                }
+                for s in canary_res.stages_executed
+            ]
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -278,11 +278,12 @@ def rank_candidates(
 class RecoveryAgent:
     """Operations control agent that evaluates and executes recovery actions using an LLM."""
 
-    def __init__(self, provider: LLMProvider, toolbox: SimulatorToolbox) -> None:
+    def __init__(self, provider: LLMProvider, toolbox: SimulatorToolbox, canary_policy: Any | None = None) -> None:
         self.provider = provider
         self.toolbox = toolbox
+        self.canary_policy = canary_policy
 
-    def run(self, run_id: str | None = None, max_iterations: int = 3) -> AgentTrace:
+    def run(self, run_id: str | None = None, max_iterations: int = 3, use_canary: bool = False) -> AgentTrace:
         """Run the AI recovery loop for the current incident observation."""
         run_id = run_id or f"RUN_{uuid.uuid4().hex[:8].upper()}"
         trace = AgentTrace(run_id=run_id, mode=determine_agent_mode())
@@ -421,7 +422,52 @@ class RecoveryAgent:
                     "traffic is reduced on the degraded gateway."
                 )
 
-                # 5. Execute action
+                # 5. Execute action (Canary mode or Direct mode)
+                if use_canary:
+                    from agent.canary import CanaryRecoveryController, CanaryOutcome
+                    controller = CanaryRecoveryController(self.toolbox, self.canary_policy)
+                    canary_res = controller.run_canary_pipeline(selected, auto_expand=True)
+                    trace.canary_result = canary_res
+                    trace.tool_calls.append({
+                        "tool_name": "run_canary_pipeline",
+                        "arguments": {"candidate_action": selected},
+                        "result": {
+                            "status": canary_res.status,
+                            "stages_executed": len(canary_res.stages_executed),
+                            "final_traffic_percentage": canary_res.current_traffic_percentage,
+                            "reason": canary_res.decision_reason
+                        }
+                    })
+
+                    obs_after = canary_res.observed_canary_metrics or self.toolbox.observe_result()
+                    trace.after_metrics = {
+                        "success_rate": obs_after.get("success_rate", 0.0),
+                        "revenue_at_risk": obs_after.get("revenue_at_risk", "0.00"),
+                    }
+
+                    if canary_res.status == CanaryOutcome.CANARY_PASS.value:
+                        trace.decision = "STOP"
+                        trace.status = "RECOVERY_SUCCESSFUL"
+                        trace.reasoning_summary.append(
+                            f"Canary progressive recovery passed and expanded to {canary_res.current_traffic_percentage}%."
+                        )
+                        break
+                    elif canary_res.status == CanaryOutcome.CANARY_FAIL.value:
+                        trace.decision = "ROLLBACK"
+                        trace.status = "FAILED_EFFECT"
+                        trace.reasoning_summary.append(
+                            f"Canary progressive recovery failed ({canary_res.decision_reason}). Rolled back."
+                        )
+                        break
+                    else:
+                        trace.decision = "STOP"
+                        trace.status = "CANARY_INCONCLUSIVE"
+                        trace.reasoning_summary.append(
+                            f"Canary recovery inconclusive ({canary_res.decision_reason}). Traffic expansion halted."
+                        )
+                        break
+
+                # Direct execution mode
                 exec_res = self.toolbox.execute_action(selected)
                 trace.tool_calls.append({
                     "tool_name": "execute_action",
@@ -498,10 +544,11 @@ class RecoveryAgent:
 class PolicyFallbackAgent:
     """Fallback agent that runs recovery actions based on deterministic candidate scoring."""
 
-    def __init__(self, toolbox: SimulatorToolbox) -> None:
+    def __init__(self, toolbox: SimulatorToolbox, canary_policy: Any | None = None) -> None:
         self.toolbox = toolbox
+        self.canary_policy = canary_policy
 
-    def run(self, run_id: str | None = None, max_iterations: int = 3) -> AgentTrace:
+    def run(self, run_id: str | None = None, max_iterations: int = 3, use_canary: bool = False) -> AgentTrace:
         """Run the fallback policy agent."""
         # PolicyFallbackAgent utilizes RecoveryAgent but forces POLICY_FALLBACK mode
         os.environ["LLM_PROVIDER"] = "mock"
@@ -510,9 +557,9 @@ class PolicyFallbackAgent:
         old_provider = os.environ.get("LLM_PROVIDER")
         os.environ["LLM_PROVIDER"] = "fallback" # forces POLICY_FALLBACK
 
-        agent = RecoveryAgent(None, self.toolbox)
+        agent = RecoveryAgent(None, self.toolbox, self.canary_policy)
         try:
-            trace = agent.run(run_id, max_iterations)
+            trace = agent.run(run_id, max_iterations, use_canary=use_canary)
         finally:
             if old_key is not None:
                 os.environ["LLM_API_KEY"] = old_key

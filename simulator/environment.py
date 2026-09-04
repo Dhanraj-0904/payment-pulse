@@ -243,6 +243,8 @@ class StatefulSimulator:
 
         # Calculate outcomes
         outcome = self._calculate_outcome(before_state, after_state)
+        if action_result:
+            outcome["action_id"] = action_result.get("action_id")
 
         # Get before revenue at risk
         before_obs = self.observe(self.last_step_transactions)

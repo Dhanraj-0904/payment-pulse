@@ -468,7 +468,11 @@
           </div>
 
           <!-- Execute Button Area -->
-          <div class="flex justify-end pt-2 border-t border-[#292E35]/40" id="execute-action-btn-container">
+          <div class="flex justify-end items-center space-x-3 pt-2 border-t border-[#292E35]/40" id="execute-action-btn-container">
+            <button onclick="runCanaryRecovery()" id="btn-run-canary" class="bg-[#D9A441] hover:bg-[#D9A441]/85 text-[#0B0D0F] px-4 py-2 rounded-[2px] font-bold text-xs tracking-wider transition flex items-center space-x-2">
+              <i class="fa-solid fa-shield-halved"></i>
+              <span>RUN CANARY (5% → 25% → 50%)</span>
+            </button>
             <button onclick="executeSelectedRecovery()" id="btn-execute-recovery" class="bg-[#34A853] hover:bg-[#34A853]/85 text-white px-4 py-2 rounded-[2px] font-bold text-xs tracking-wider transition flex items-center space-x-2">
               <i class="fa-solid fa-bolt"></i>
               <span>EXECUTE POLICY APPROVED RECOVERY</span>
@@ -496,6 +500,101 @@
                 <div class="text-[#E5534B]">SR Error: <span class="font-bold" id="tel-err-sr">--%</span></div>
                 <div class="text-[#E5534B]">RAR Error: <span class="font-bold" id="tel-err-rar">INR --</span></div>
               </div>
+            </div>
+          </div>
+
+          <!-- 3-Layer Canary Comparison Panel -->
+          <div id="canary-comparison-panel" class="hidden border border-[#292E35] rounded-[1px] p-3 bg-[#0B0D0F] space-y-3">
+            <div class="flex justify-between items-center border-b border-[#292E35] pb-1.5">
+              <div class="text-[10px] text-[#D9A441] font-bold uppercase tracking-wider flex items-center space-x-1.5">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span>CANARY RECOVERY · 3-LAYER CAUSAL COMPARISON</span>
+              </div>
+              <div class="flex items-center space-x-2">
+                <span class="text-[10px] font-mono text-[#9299A3]" id="canary-stage-badge">STAGE: 5% CANARY</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded-[1px] font-bold" id="canary-outcome-badge">CANARY_PASS</span>
+              </div>
+            </div>
+
+            <!-- 3 Columns: Layer 1 Control, Layer 2 Counterfactual, Layer 3 Observed Canary -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-mono">
+              <!-- Layer 1: Control (Pre-Canary Baseline) -->
+              <div class="border border-[#292E35] rounded-[1px] p-2.5 bg-[#15191E]/60 space-y-1.5">
+                <div class="text-[10px] text-[#9299A3] font-bold uppercase border-b border-[#292E35]/60 pb-1 flex justify-between">
+                  <span>LAYER 1: CONTROL</span>
+                  <span class="text-[#626A75]">BASELINE</span>
+                </div>
+                <div class="flex justify-between text-[11px]">
+                  <span class="text-[#626A75]">Success Rate:</span>
+                  <span class="text-[#E6E8EB] font-bold" id="canary-l1-sr">--%</span>
+                </div>
+                <div class="flex justify-between text-[11px]">
+                  <span class="text-[#626A75]">Failure Rate:</span>
+                  <span class="text-[#E5534B] font-bold" id="canary-l1-fr">--%</span>
+                </div>
+                <div class="flex justify-between text-[11px]">
+                  <span class="text-[#626A75]">Latency:</span>
+                  <span class="text-[#E6E8EB] font-bold" id="canary-l1-latency">--ms</span>
+                </div>
+                <div class="flex justify-between text-[11px]">
+                  <span class="text-[#626A75]">Revenue at Risk:</span>
+                  <span class="text-[#E5534B] font-bold" id="canary-l1-rar">INR --</span>
+                </div>
+              </div>
+
+              <!-- Layer 2: Counterfactual (Predicted With-Action) -->
+              <div class="border border-[#292E35] rounded-[1px] p-2.5 bg-[#15191E]/60 space-y-1.5">
+                <div class="text-[10px] text-[#5B8DEF] font-bold uppercase border-b border-[#292E35]/60 pb-1 flex justify-between">
+                  <span>LAYER 2: COUNTERFACTUAL</span>
+                  <span class="text-[#626A75]">PREDICTED</span>
+                </div>
+                <div class="flex justify-between text-[11px]">
+                  <span class="text-[#626A75]">Pred Success Rate:</span>
+                  <span class="text-[#34A853] font-bold" id="canary-l2-sr">--%</span>
+                </div>
+                <div class="flex justify-between text-[11px]">
+                  <span class="text-[#626A75]">95% CI (SR):</span>
+                  <span class="text-[#5B8DEF] font-bold" id="canary-l2-ci">--</span>
+                </div>
+                <div class="flex justify-between text-[11px]">
+                  <span class="text-[#626A75]">Pred Latency:</span>
+                  <span class="text-[#E6E8EB] font-bold" id="canary-l2-latency">--ms</span>
+                </div>
+                <div class="flex justify-between text-[11px]">
+                  <span class="text-[#626A75]">Pred Rev at Risk:</span>
+                  <span class="text-[#34A853] font-bold" id="canary-l2-rar">INR --</span>
+                </div>
+              </div>
+
+              <!-- Layer 3: Observed Canary (Real Stage Metrics) -->
+              <div class="border border-[#D9A441]/40 rounded-[1px] p-2.5 bg-[#15191E] space-y-1.5">
+                <div class="text-[10px] text-[#D9A441] font-bold uppercase border-b border-[#292E35]/60 pb-1 flex justify-between">
+                  <span>LAYER 3: OBSERVED CANARY</span>
+                  <span class="text-[#D9A441]" id="canary-l3-traffic">5% TRAFFIC</span>
+                </div>
+                <div class="flex justify-between text-[11px]">
+                  <span class="text-[#626A75]">Obs Success Rate:</span>
+                  <span class="text-[#34A853] font-bold" id="canary-l3-sr">--%</span>
+                </div>
+                <div class="flex justify-between text-[11px]">
+                  <span class="text-[#626A75]">Obs Failure Rate:</span>
+                  <span class="text-[#E6E8EB] font-bold" id="canary-l3-fr">--%</span>
+                </div>
+                <div class="flex justify-between text-[11px]">
+                  <span class="text-[#626A75]">Obs Latency:</span>
+                  <span class="text-[#E6E8EB] font-bold" id="canary-l3-latency">--ms</span>
+                </div>
+                <div class="flex justify-between text-[11px]">
+                  <span class="text-[#626A75]">Obs Rev at Risk:</span>
+                  <span class="text-[#34A853] font-bold" id="canary-l3-rar">INR --</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Decision & Progress Summary -->
+            <div class="text-[11px] font-mono text-[#9299A3] border-t border-[#292E35] pt-2 flex items-center justify-between">
+              <span id="canary-decision-explanation">Awaiting canary run...</span>
+              <span id="canary-rollback-indicator" class="text-[#E5534B] font-bold hidden"><i class="fa-solid fa-rotate-left mr-1"></i>ROLLED BACK</span>
             </div>
           </div>
         </div>
@@ -1419,6 +1518,98 @@
       }
     }
 
+    async function runCanaryRecovery() {
+      const cand = state.recovery.selectedCandidate;
+      if (!cand) return;
+
+      const btn = document.getElementById('btn-run-canary');
+      const origText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>RUNNING CANARY PIPELINE...</span>`;
+
+      try {
+        const res = await fetch('/api/demo/recovery/canary/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: cand.action, auto_expand: true })
+        });
+        const data = await res.json();
+        renderCanaryComparison(data);
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-shield-halved"></i><span>CANARY DONE (${data.status})</span>`;
+      } catch (err) {
+        console.error('Canary execution error:', err);
+        btn.disabled = false;
+        btn.innerHTML = origText;
+      }
+    }
+
+    function renderCanaryComparison(data) {
+      const panel = document.getElementById('canary-comparison-panel');
+      if (!panel) return;
+      panel.classList.remove('hidden');
+
+      const comp = data.three_layer_comparison || {};
+      const l1 = comp.layer_1_control || {};
+      const l2 = comp.layer_2_counterfactual || {};
+      const l3 = comp.layer_3_observed_canary || {};
+
+      // Badges
+      document.getElementById('canary-stage-badge').innerText = `STAGE: ${data.current_traffic_percentage}% CANARY (${data.current_stage})`;
+      const badge = document.getElementById('canary-outcome-badge');
+      badge.innerText = data.status;
+      if (data.status === 'CANARY_PASS') {
+        badge.className = 'text-[10px] font-mono px-1.5 py-0.5 rounded-[1px] font-bold bg-[#34A853]/20 text-[#34A853] border border-[#34A853]/40';
+      } else if (data.status === 'CANARY_FAIL') {
+        badge.className = 'text-[10px] font-mono px-1.5 py-0.5 rounded-[1px] font-bold bg-[#E5534B]/20 text-[#E5534B] border border-[#E5534B]/40';
+      } else {
+        badge.className = 'text-[10px] font-mono px-1.5 py-0.5 rounded-[1px] font-bold bg-[#D9A441]/20 text-[#D9A441] border border-[#D9A441]/40';
+      }
+
+      // Layer 1: Control
+      const l1_sr = l1.success_rate !== undefined ? (l1.success_rate * 100).toFixed(1) + '%' : '--%';
+      const l1_fr = l1.failure_rate !== undefined ? (l1.failure_rate * 100).toFixed(1) + '%' : '--%';
+      const l1_lat = l1.latency !== undefined ? Math.round(l1.latency) + 'ms' : '--ms';
+      const l1_rar = l1.revenue_at_risk ? 'INR ' + Number(l1.revenue_at_risk).toLocaleString() : 'INR 0.00';
+      document.getElementById('canary-l1-sr').innerText = l1_sr;
+      document.getElementById('canary-l1-fr').innerText = l1_fr;
+      document.getElementById('canary-l1-latency').innerText = l1_lat;
+      document.getElementById('canary-l1-rar').innerText = l1_rar;
+
+      // Layer 2: Counterfactual
+      const l2_with = l2.with_action || {};
+      const l2_sr = l2_with.success_rate !== undefined ? (l2_with.success_rate * 100).toFixed(1) + '%' : '--%';
+      const l2_ci_low = l2.confidence_interval_sr ? (l2.confidence_interval_sr[0] * 100).toFixed(1) : '+0.0';
+      const l2_ci_high = l2.confidence_interval_sr ? (l2.confidence_interval_sr[1] * 100).toFixed(1) : '+0.0';
+      const l2_lat = l2_with.average_latency !== undefined ? Math.round(l2_with.average_latency) + 'ms' : '--ms';
+      const l2_rar = l2_with.revenue_at_risk ? 'INR ' + Number(l2_with.revenue_at_risk).toLocaleString() : 'INR 0.00';
+      document.getElementById('canary-l2-sr').innerText = l2_sr;
+      document.getElementById('canary-l2-ci').innerText = `[${l2_ci_low}pp, ${l2_ci_high}pp]`;
+      document.getElementById('canary-l2-latency').innerText = l2_lat;
+      document.getElementById('canary-l2-rar').innerText = l2_rar;
+
+      // Layer 3: Observed Canary
+      const l3_pct = data.current_traffic_percentage ? data.current_traffic_percentage + '% TRAFFIC' : 'CANARY';
+      document.getElementById('canary-l3-traffic').innerText = l3_pct;
+      const l3_sr = l3.success_rate !== undefined ? (l3.success_rate * 100).toFixed(1) + '%' : '--%';
+      const l3_fr = l3.failure_rate !== undefined ? (l3.failure_rate * 100).toFixed(1) + '%' : '--%';
+      const l3_lat = l3.latency !== undefined ? Math.round(l3.latency) + 'ms' : '--ms';
+      const l3_rar = l3.revenue_at_risk ? 'INR ' + Number(l3.revenue_at_risk).toLocaleString() : 'INR 0.00';
+      document.getElementById('canary-l3-sr').innerText = l3_sr;
+      document.getElementById('canary-l3-fr').innerText = l3_fr;
+      document.getElementById('canary-l3-latency').innerText = l3_lat;
+      document.getElementById('canary-l3-rar').innerText = l3_rar;
+
+      // Decision & rollback indicator
+      document.getElementById('canary-decision-explanation').innerText = data.decision_reason || 'Canary progressive cycle finished.';
+      const rollInd = document.getElementById('canary-rollback-indicator');
+      if (data.rolled_back) {
+        rollInd.classList.remove('hidden');
+      } else {
+        rollInd.classList.add('hidden');
+      }
+    }
+
     // ==========================================
     // System Reset & Demo Controls
     // ==========================================
@@ -1456,6 +1647,7 @@
       document.getElementById('recovery-candidates-area').classList.add('hidden');
       document.getElementById('cf-details').classList.add('hidden');
       document.getElementById('cf-telemetry').classList.add('hidden');
+      document.getElementById('canary-comparison-panel').classList.add('hidden');
 
       for (const gw of ['gateway_alpha', 'gateway_beta', 'gateway_gamma']) {
         state.gateways[gw] = { successes: 0, total: 0, latencies: [] };
