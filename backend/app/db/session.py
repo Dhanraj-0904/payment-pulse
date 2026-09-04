@@ -6,7 +6,8 @@ from sqlalchemy.orm import sessionmaker
 from app.core.config import get_settings
 
 settings = get_settings()
-engine = create_engine(settings.resolved_database_url, pool_pre_ping=True)
+connect_args = {"check_same_thread": False} if "sqlite" in settings.resolved_database_url else {"connect_timeout": 3}
+engine = create_engine(settings.resolved_database_url, connect_args=connect_args, pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
 
