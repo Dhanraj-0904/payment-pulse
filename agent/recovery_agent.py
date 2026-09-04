@@ -129,7 +129,21 @@ def diagnose_incident(observation: Any, confidence: float) -> dict[str, Any]:
                 affected_merchant = val
 
     if active:
-        root_cause = active[0].get("incident_type", "UNKNOWN")
+        inc0 = active[0]
+        root_cause = inc0.get("incident_type", "UNKNOWN")
+        if not affected_gateway and inc0.get("affected_gateway"):
+            affected_gateway = inc0.get("affected_gateway")
+        if not affected_bank and inc0.get("affected_bank"):
+            affected_bank = inc0.get("affected_bank")
+        if not affected_payment_method and inc0.get("affected_payment_method"):
+            affected_payment_method = inc0.get("affected_payment_method")
+        if not affected_merchant and inc0.get("affected_merchant"):
+            affected_merchant = inc0.get("affected_merchant")
+        if not affected_region and inc0.get("affected_location"):
+            affected_region = inc0.get("affected_location")
+
+    if not affected_gateway and obs.get("affected_gateway"):
+        affected_gateway = obs.get("affected_gateway")
 
     if evidence_list:
         ev = evidence_list[0]
@@ -220,7 +234,18 @@ def rank_candidates(
     current = toolbox.calculate_revenue_impact()
     current_success = current["success_rate"]
     current_rev = Decimal(current["revenue_at_risk"])
+    if not diagnosis:
+        obs = toolbox.observe_result()
+        diagnosis_confidence = calculate_diagnosis_confidence(obs)
+        diagnosis = diagnose_incident(obs, diagnosis_confidence)
+
     affected_gateway = diagnosis.get("affected_gateway") if diagnosis else None
+    if not affected_gateway:
+        obs = toolbox.observe_result()
+        if obs.get("active_incidents"):
+            affected_gateway = obs["active_incidents"][0].get("affected_gateway")
+        elif obs.get("affected_gateway"):
+            affected_gateway = obs.get("affected_gateway")
 
     ranked_results = []
     for action in candidates:
@@ -258,6 +283,8 @@ def rank_candidates(
             if act_type == "ROUTE_TRAFFIC":
                 if params.get("source_gateway") == affected_gateway:
                     targets_affected = True
+                if params.get("destination_gateway") == affected_gateway:
+                    targets_affected = False
             elif act_type == "REDUCE_GATEWAY_TRAFFIC":
                 if params.get("gateway") == affected_gateway:
                     targets_affected = True
@@ -265,7 +292,7 @@ def rank_candidates(
             if targets_affected:
                 diagnosis_alignment_score = 1.0
             else:
-                diagnosis_alignment_score = 0.01
+                diagnosis_alignment_score = 0.001
 
         # Calculate final generic action score
         score = (0.5 * success_score + 0.5 * revenue_score) * diagnosis_confidence * (1.0 - risk) * reversibility * diagnosis_alignment_score

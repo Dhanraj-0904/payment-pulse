@@ -25,6 +25,64 @@ def database_schema():
     Base.metadata.drop_all(bind=engine)
 
 
+@pytest.fixture(autouse=True)
+def isolate_test_environment():
+    """Ensure complete test isolation: no background threads, clean event bus, clean simulator."""
+    try:
+        from app.api.demo import traffic_runner
+        traffic_runner.stop()
+    except Exception:
+        pass
+
+    try:
+        from agent.event_bus import event_bus
+        event_bus._subscribers.clear()
+        event_bus._ws_connections.clear()
+        event_bus.event_history.clear()
+    except Exception:
+        pass
+
+    try:
+        from app.core.simulator_adapter import get_simulator_adapter
+        adapter = get_simulator_adapter()
+        adapter.simulator.incidents_config.clear()
+        adapter.simulator.incident_rngs.clear()
+        adapter.simulator.active_actions.clear()
+        adapter.simulator.action_history.clear()
+        adapter.simulator.last_step_transactions.clear()
+        adapter.simulator.prior_step_transactions.clear()
+    except Exception:
+        pass
+
+    yield
+
+    try:
+        from app.api.demo import traffic_runner
+        traffic_runner.stop()
+    except Exception:
+        pass
+
+    try:
+        from agent.event_bus import event_bus
+        event_bus._subscribers.clear()
+        event_bus._ws_connections.clear()
+        event_bus.event_history.clear()
+    except Exception:
+        pass
+
+    try:
+        from app.core.simulator_adapter import get_simulator_adapter
+        adapter = get_simulator_adapter()
+        adapter.simulator.incidents_config.clear()
+        adapter.simulator.incident_rngs.clear()
+        adapter.simulator.active_actions.clear()
+        adapter.simulator.action_history.clear()
+        adapter.simulator.last_step_transactions.clear()
+        adapter.simulator.prior_step_transactions.clear()
+    except Exception:
+        pass
+
+
 @pytest.fixture
 def client() -> TestClient:
     with TestClient(app) as test_client:

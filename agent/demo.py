@@ -106,9 +106,11 @@ def run_demo() -> None:
             "without_action": {"success_rate": cf.without_action.success_rate},
             "with_action": {"success_rate": cf.with_action.success_rate},
             "success_rate_ci": [cf.success_rate_ci[0], cf.success_rate_ci[1]],
+            "runs": cf.runs,
         },
         canary={
             "status": canary_res.status,
+            "initial_traffic_percentage": 5.0,
             "current_traffic_percentage": canary_res.current_traffic_percentage,
             "stages": [
                 {"stage": s.stage_index, "traffic_pct": s.traffic_percentage, "outcome": s.outcome.value}
